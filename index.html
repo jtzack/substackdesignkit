@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Substack Design Kit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #111; color: #fff; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+    textarea:focus, input:focus { outline: 2px solid #FF6719; outline-offset: -2px; }
+    .prompt-box { background: #141414; border: 1px solid #2a2a2a; border-radius: 10px; padding: 18px; font-family: 'Courier New', monospace; font-size: 12.5px; line-height: 1.65; color: #ccc; white-space: pre-wrap; word-break: break-word; max-height: 280px; overflow-y: auto; }
+    ::-webkit-scrollbar { height: 6px; width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+/* ═══════════════════════════════════════════
+   SHARED CONSTANTS
+   ═══════════════════════════════════════════ */
+
+const TEMPLATES = [
+  { id: "postHeader", label: "Post Header", width: 1200, height: 630, desc: "1200\u00d7630px" },
+  { id: "profileBanner", label: "Profile Banner", width: 1200, height: 400, desc: "1200\u00d7400px" },
+  { id: "emailBanner", label: "Email Banner", width: 1100, height: 220, desc: "1100\u00d7220px" },
+  { id: "wordmark", label: "Wordmark", width: 1344, height: 256, desc: "1344\u00d7256px \u00b7 transparent" },
+];
+
+const KIT_STYLES = [
+  { id: "diagonal", label: "Diagonal Split" },
+  { id: "bar", label: "Accent Bar" },
+  { id: "solid", label: "Bold Block" },
+];
+
+const PALETTES = [
+  { label: "Substack", dark: "#333333", accent: "#FF6719" },
+  { label: "Ocean", dark: "#1B2A4A", accent: "#00B4D8" },
+  { label: "Forest", dark: "#1A2E1A", accent: "#4ADE80" },
+  { label: "Berry", dark: "#2D1B2E", accent: "#E879F9" },
+  { label: "Ember", dark: "#2A1A1A", accent: "#F97316" },
+  { label: "Royal", dark: "#1E1B3A", accent: "#818CF8" },
+  { label: "Gold", dark: "#1C1A15", accent: "#FACC15" },
+  { label: "Rose", dark: "#2A1A1E", accent: "#FB7185" },
+  { label: "Teal", dark: "#0F2B2B", accent: "#2DD4BF" },
+  { label: "Mono", dark: "#111111", accent: "#FFFFFF" },
+];
+
+const DEFAULT_INPUTS = {
+  name: "", headline: "", prehead: "", category: "", tagline: "", url: "",
+  darkColor: "#333333", accentColor: "#FF6719",
+  logo: null, bgImage: null, overlayOpacity: 50,
+  showPrehead: true, showHeadline: true, showLogo: true, showUrl: true,
+};
+
+/* ═══════════════════════════════════════════
+   THUMBNAIL STYLE SVG PREVIEWS
+   ═══════════════════════════════════════════ */
+
+function HalftoneSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#1D3557"/>{[...Array(12)].map((_,r)=>[...Array(20)].map((_,c)=><circle key={`${r}-${c}`} cx={c*15+7} cy={r*14+7} r={(Math.sin(r*0.8+c*0.3)+1)*3.5+1} fill="#E63946" opacity={0.85}/>))}<rect x="40" y="50" width="120" height="60" fill="#F1FAEE" opacity={0.9}/><rect x="50" y="65" width="80" height="8" rx="2" fill="#E63946"/><rect x="50" y="80" width="60" height="6" rx="2" fill="#1D3557"/></svg>)}
+function VintageDuotoneSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#E8846B"/><defs><pattern id="xh" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><line x1="0" y1="0" x2="0" y2="6" stroke="#2B4141" strokeWidth="0.8" opacity="0.5"/></pattern></defs><rect width="280" height="160" fill="url(#xh)"/><ellipse cx="140" cy="85" rx="55" ry="55" fill="#2B4141" opacity="0.7"/><ellipse cx="140" cy="85" rx="40" ry="40" fill="none" stroke="#F4D8C2" strokeWidth="1.5"/>{[...Array(8)].map((_,i)=><line key={i} x1={140+Math.cos(i*0.78)*20} y1={85+Math.sin(i*0.78)*20} x2={140+Math.cos(i*0.78)*48} y2={85+Math.sin(i*0.78)*48} stroke="#F4D8C2" strokeWidth="0.8" opacity="0.6"/>)}<circle cx="200" cy="40" r="18" fill="#D4536B" opacity="0.4"/></svg>)}
+function GeometricSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#1A1A2E"/><polygon points="180,0 280,0 280,160" fill="#FF6B35"/><rect x="0" y="0" width="180" height="4" fill="#FF6B35"/><rect x="30" y="60" width="100" height="10" rx="1" fill="#FFF"/><rect x="30" y="78" width="70" height="6" rx="1" fill="#FFF" opacity="0.4"/><rect x="200" y="90" width="40" height="40" fill="#2E2E2E" stroke="#FF6B35" strokeWidth="2"/></svg>)}
+function FlatVectorSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#1B2838"/><circle cx="140" cy="95" r="50" fill="#4FC1E9" opacity="0.25"/><rect x="100" y="70" width="80" height="55" rx="8" fill="#4FC1E9"/><rect x="110" y="80" width="25" height="18" rx="3" fill="#1B2838" opacity="0.4"/><rect x="145" y="80" width="25" height="18" rx="3" fill="#1B2838" opacity="0.4"/><rect x="120" y="105" width="40" height="5" rx="2" fill="#FFCE54"/><circle cx="70" cy="45" r="20" fill="#FFCE54" opacity="0.9"/><polygon points="200,30 215,60 185,60" fill="#ED5565" opacity="0.7"/></svg>)}
+function CollageSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#F2E9E4"/><rect x="20" y="15" width="90" height="70" fill="#C9ADA7" transform="rotate(-3 65 50)"/><rect x="80" y="40" width="110" height="75" fill="#22223B" opacity="0.85" transform="rotate(2 135 77)"/><rect x="160" y="20" width="80" height="55" fill="#4A4E69" transform="rotate(-1 200 47)"/><circle cx="200" cy="110" r="30" fill="#C9ADA7" opacity="0.6"/></svg>)}
+function SketchSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#FAFAFA"/><circle cx="140" cy="70" r="35" fill="none" stroke="#222" strokeWidth="2" strokeDasharray="2 1"/><path d="M120,55 Q140,30 160,55" fill="none" stroke="#222" strokeWidth="1.8"/><circle cx="130" cy="68" r="3" fill="#222"/><circle cx="150" cy="68" r="3" fill="#222"/><path d="M132,78 Q140,84 148,78" fill="none" stroke="#222" strokeWidth="1.5"/><line x1="175" y1="65" x2="220" y2="50" stroke="#4ECDC4" strokeWidth="2"/></svg>)}
+function RisographSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#FFF5E6"/><circle cx="110" cy="75" r="50" fill="#FF6B6B" opacity="0.75"/><circle cx="170" cy="85" r="45" fill="#4ECDC4" opacity="0.6"/><rect x="90" y="50" width="100" height="60" fill="#FFE66D" opacity="0.35" transform="rotate(-5 140 80)"/></svg>)}
+function NoirSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#0A0A0A"/>{[...Array(12)].map((_,i)=><line key={i} x1={i*25} y1="0" x2={i*25+40} y2="160" stroke="#222" strokeWidth="1"/>)}<ellipse cx="140" cy="80" rx="60" ry="55" fill="#1A1A1A"/><circle cx="140" cy="70" r="15" fill="#E63946"/><rect x="60" y="130" width="80" height="4" rx="2" fill="#FFF" opacity="0.7"/></svg>)}
+function PapercutSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#F0EDE8"/><defs><filter id="s1"><feDropShadow dx="2" dy="3" stdDeviation="2" floodColor="#000" floodOpacity="0.15"/></filter><filter id="s2"><feDropShadow dx="3" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.12"/></filter></defs><rect x="20" y="80" width="240" height="60" rx="4" fill="#2D936C" filter="url(#s1)"/><rect x="40" y="50" width="200" height="70" rx="4" fill="#E8C547" filter="url(#s2)"/><rect x="70" y="25" width="140" height="80" rx="4" fill="#D64045" filter="url(#s2)"/><circle cx="140" cy="60" r="22" fill="#F0EDE8" filter="url(#s1)"/><circle cx="140" cy="60" r="14" fill="#2D936C"/></svg>)}
+
+function RetrofuturismSVG(){const s=Array.from({length:20},(_,i)=>({x:(i*53+17)%280,y:(i*31+7)%80,r:(i%3)*0.5+0.5,o:(i%5)*0.15+0.3}));return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#0D0221"/>{[...Array(5)].map((_,i)=><ellipse key={i} cx="140" cy="130" rx={40+i*25} ry={8+i*4} fill="none" stroke="#00F0FF" strokeWidth="0.6" opacity={0.3-i*0.04}/>)}<polygon points="140,20 155,70 125,70" fill="#FF2E63" opacity="0.9"/><circle cx="140" cy="50" r="6" fill="#FAD02C"/>{s.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={p.r} fill="#FFF" opacity={p.o}/>)}</svg>)}
+function BauhausSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#011627"/><circle cx="100" cy="70" r="45" fill="#E71D36" opacity="0.85"/><polygon points="180,25 220,95 140,95" fill="#FCBF49" opacity="0.85"/><rect x="170" y="90" width="70" height="50" fill="#2EC4B6" opacity="0.85"/></svg>)}
+function BrutalismSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#FFF"/><rect x="0" y="0" width="280" height="40" fill="#000"/><rect x="0" y="120" width="280" height="40" fill="#FF0000"/><rect x="0" y="40" width="8" height="80" fill="#000"/><rect x="272" y="40" width="8" height="80" fill="#000"/><rect x="20" y="55" width="160" height="18" fill="#000"/><rect x="20" y="95" width="120" height="6" fill="#FFFF00"/><rect x="200" y="50" width="60" height="60" fill="#FFFF00" stroke="#000" strokeWidth="3"/></svg>)}
+function SurrealismSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#FEFAE0"/><rect x="0" y="110" width="280" height="50" fill="#606C38" opacity="0.3"/><ellipse cx="140" cy="60" rx="25" ry="30" fill="#DDA15E" opacity="0.6"/><circle cx="140" cy="50" r="12" fill="#283618"/><circle cx="140" cy="50" r="6" fill="#FEFAE0"/><ellipse cx="60" cy="45" rx="15" ry="20" fill="#606C38" opacity="0.2"/></svg>)}
+function UtilitarianSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#2D3047"/>{[...Array(8)].map((_,i)=><line key={`h${i}`} x1="0" y1={i*20+10} x2="280" y2={i*20+10} stroke="#93B7BE" strokeWidth="0.3" opacity="0.3"/>)}{[20,40,70,55,85,60,45].map((h,i)=><rect key={i} x={40+i*28} y={130-h} width={18} height={h} fill={i===4?"#F3DE8A":"#93B7BE"} opacity={i===4?0.8:0.5}/>)}<line x1="40" y1="130" x2="240" y2="130" stroke="#93B7BE" strokeWidth="1" opacity="0.6"/></svg>)}
+function GradientMeshSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><defs><linearGradient id="gm1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#667eea"/><stop offset="50%" stopColor="#764ba2"/><stop offset="100%" stopColor="#f093fb"/></linearGradient><radialGradient id="gm2" cx="30%" cy="40%"><stop offset="0%" stopColor="#4facfe" stopOpacity="0.6"/><stop offset="100%" stopColor="#4facfe" stopOpacity="0"/></radialGradient></defs><rect width="280" height="160" fill="url(#gm1)"/><rect width="280" height="160" fill="url(#gm2)"/><rect x="60" y="55" width="160" height="50" rx="12" fill="rgba(255,255,255,0.12)"/><rect x="80" y="70" width="90" height="8" rx="4" fill="rgba(255,255,255,0.6)"/></svg>)}
+function WoodblockSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#F5F0E8"/><defs><pattern id="wb" width="4" height="4" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="4" y2="4" stroke="#1A1A1A" strokeWidth="0.3" opacity="0.15"/></pattern></defs><rect width="280" height="160" fill="url(#wb)"/><circle cx="140" cy="75" r="45" fill="#C0392B" opacity="0.9"/><circle cx="140" cy="75" r="30" fill="#F5F0E8"/><circle cx="140" cy="75" r="18" fill="#1A1A1A"/></svg>)}
+function AppleSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#FAFAFA"/><rect x="95" y="35" width="90" height="90" rx="20" fill="#F5F5F7"/><defs><linearGradient id="ap1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#555"/><stop offset="100%" stopColor="#333"/></linearGradient></defs><rect x="115" y="50" width="50" height="60" rx="8" fill="url(#ap1)"/><rect x="120" y="55" width="40" height="35" rx="4" fill="#0A84FF" opacity="0.3"/><circle cx="140" cy="100" r="4" fill="#555" opacity="0.3"/></svg>)}
+function SpotifyWrappedSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#1DB954"/><defs><linearGradient id="sw1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#FF6B6B"/><stop offset="100%" stopColor="#FFA07A"/></linearGradient></defs><circle cx="80" cy="80" r="50" fill="url(#sw1)" opacity="0.8"/><rect x="50" y="45" width="80" height="14" rx="3" fill="#FFF" opacity="0.9"/><rect x="50" y="65" width="120" height="30" rx="4" fill="#191414" opacity="0.6"/><circle cx="220" cy="120" r="20" fill="#FFA07A" opacity="0.5"/></svg>)}
+function StripeSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><defs><linearGradient id="st1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#635BFF"/><stop offset="40%" stopColor="#80E9FF"/><stop offset="100%" stopColor="#7A73FF"/></linearGradient></defs><rect width="280" height="160" fill="url(#st1)"/><rect x="70" y="40" width="140" height="80" rx="12" fill="rgba(255,255,255,0.12)"/><rect x="85" y="55" width="70" height="8" rx="4" fill="rgba(255,255,255,0.7)"/><rect x="85" y="70" width="50" height="5" rx="2" fill="rgba(255,255,255,0.35)"/></svg>)}
+function CriterionSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#0A0A0A"/><rect x="40" y="20" width="200" height="120" fill="#1A1A1A"/><rect x="55" y="35" width="170" height="70" fill="#2A2A2A"/><defs><linearGradient id="cr1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#C0392B" stopOpacity="0.4"/><stop offset="100%" stopColor="#2C3E50" stopOpacity="0.6"/></linearGradient></defs><rect x="55" y="35" width="170" height="70" fill="url(#cr1)"/><rect x="80" y="112" width="120" height="5" rx="1" fill="#FFF" opacity="0.6"/></svg>)}
+function NewYorkerSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#FDF6E3"/><rect x="30" y="20" width="220" height="120" fill="none" stroke="#1A1A1A" strokeWidth="1.5"/><circle cx="120" cy="70" r="25" fill="none" stroke="#1A1A1A" strokeWidth="1.8"/><circle cx="113" cy="65" r="2.5" fill="#1A1A1A"/><circle cx="127" cy="65" r="2.5" fill="#1A1A1A"/><path d="M113,77 Q120,83 127,77" fill="none" stroke="#1A1A1A" strokeWidth="1.5"/><rect x="155" y="55" width="80" height="5" rx="1" fill="#1A1A1A" opacity="0.5"/><rect x="155" y="65" width="60" height="4" rx="1" fill="#1A1A1A" opacity="0.3"/><circle cx="195" cy="110" r="3" fill="#C0392B"/></svg>)}
+function PenguinSVG(){return(<svg viewBox="0 0 280 160" style={{width:"100%",height:"100%",display:"block"}}><rect width="280" height="160" fill="#F4F0E5"/><rect x="60" y="10" width="160" height="140" fill="#FF6B35" rx="2"/><rect x="60" y="10" width="160" height="35" fill="#F4F0E5" rx="2"/><rect x="60" y="115" width="160" height="35" fill="#F4F0E5" rx="2"/><rect x="70" y="17" width="100" height="6" rx="1" fill="#2C2C2C" opacity="0.7"/><ellipse cx="140" cy="75" rx="22" ry="28" fill="#F4F0E5"/><ellipse cx="140" cy="75" rx="18" ry="24" fill="#2C2C2C"/><ellipse cx="140" cy="68" rx="10" ry="12" fill="#F4F0E5"/><circle cx="137" cy="66" r="2" fill="#2C2C2C"/><circle cx="143" cy="66" r="2" fill="#2C2C2C"/><polygon points="140,72 137,76 143,76" fill="#FF6B35"/></svg>)}
+
+const SVG_MAP = {
+  "pop-art-halftone": HalftoneSVG, "vintage-duotone": VintageDuotoneSVG,
+  "geometric-colorblock": GeometricSVG, "flat-vector": FlatVectorSVG,
+  "collage": CollageSVG, "conceptual-sketch": SketchSVG,
+  "risograph": RisographSVG, "noir": NoirSVG, "papercut": PapercutSVG,
+  "retrofuturism": RetrofuturismSVG, "bauhaus": BauhausSVG, "brutalism": BrutalismSVG,
+  "surrealism": SurrealismSVG, "utilitarian": UtilitarianSVG,
+  "gradient-mesh": GradientMeshSVG, "woodblock": WoodblockSVG,
+  "brand-apple": AppleSVG, "brand-spotify": SpotifyWrappedSVG,
+  "brand-stripe": StripeSVG, "brand-criterion": CriterionSVG,
+  "brand-newyorker": NewYorkerSVG, "brand-penguin": PenguinSVG,
+};
+
+/* ═══════════════════════════════════════════
+   THUMBNAIL STYLE DATA
+   ═══════════════════════════════════════════ */
+
+const THUMB_STYLES = [
+  { id: "pop-art-halftone", name: "Pop Art / Halftone", desc: "Bold dots, high contrast, editorial punch", search: "pop art halftone graphic design editorial illustration",
+    prompt: `Pop art halftone printing. Ben-Day dots. Two or three flat colors max. ONE bold subject, isolated, exaggerated. Think Lichtenstein: simple, graphic, punchy. Vast negative space around subject.`,
+    subject: "One single iconic object or symbol. Nothing else. Let the halftone texture do all the work.",
+    richPrompt: `Pop art halftone editorial illustration. Ben-Day dots layered across the composition. Bold, saturated colors with visible misregistration between layers. Comic book printing aesthetic with thick black outlines on key elements. Confident, graphic, punchy — like a well-printed screen poster.`,
+    richSubject: "Render the subject as a bold graphic icon with halftone texture filling the background and subject alike. Structured composition, not scattered." },
+  { id: "vintage-duotone", name: "Vintage Duotone", desc: "Antique illustrations, two-tone color wash", search: "vintage engraving duotone modern illustration editorial",
+    prompt: `Victorian-era engraving with modern duotone color wash. ONE illustration — botanical, mechanical, or anatomical — centered on empty background. Two colors only. Visible crosshatching. Generous empty space.`,
+    subject: "Pick ONE vintage illustration that metaphorically represents the topic. Center it. Surround it with nothing.",
+    richPrompt: `Victorian-era engraving with modern duotone color treatment. Rich crosshatching and fine line detail from 19th century book illustrations. Two-color overlay with strong tonal range. Slightly aged texture. The illustration should feel like a found artifact given new life with color.`,
+    richSubject: "A detailed vintage illustration — botanical, mechanical, or anatomical — that fills the frame with intentional linework. Background can include period-appropriate decorative borders or subtle pattern." },
+  { id: "geometric-colorblock", name: "Geometric Color Block", desc: "Clean angles, bold shapes, modern edge", search: "geometric color block graphic design swiss style poster",
+    prompt: `Clean geometric composition. Three or four flat color blocks divided by sharp diagonal or vertical lines. No textures, no gradients, no detail. Swiss poster design: pure shape and color. Minimal.`,
+    subject: "Represent the concept through spatial arrangement of 2-3 geometric shapes. No literal depiction.",
+    richPrompt: `Bold geometric composition with sharp diagonal and vertical lines creating distinct color zones. Flat solid colors, architectural precision, deliberate asymmetry. Swiss international style: structured, purposeful, every shape placed with intention. Hard edges, no soft shadows, no gradients.`,
+    richSubject: "Build the composition from 4-6 geometric shapes that create visual tension and balance. The arrangement itself tells the story." },
+  { id: "flat-vector", name: "Flat Vector", desc: "Clean, modern, Kurzgesagt-style", search: "flat vector illustration editorial modern kurzgesagt style",
+    prompt: `Flat vector illustration. Solid colors, no gradients, no outlines. ONE simple scene with 2-3 elements max. Clean, friendly, Kurzgesagt-style simplicity. Generous whitespace. No clutter.`,
+    subject: "Simplify to one friendly iconic element with personality. Less is more.",
+    richPrompt: `Clean flat vector illustration with solid colors and minimal outlines. Simple geometric shapes with smooth curves. Kurzgesagt meets Dropbox: friendly, modern, approachable. A complete scene with 3-5 elements that work together. Subtle long shadows for depth.`,
+    richSubject: "Build a small scene with 3-5 vector elements that relate to each other. Friendly and readable, but tells a visual story." },
+  { id: "collage", name: "Collage / Mixed Media", desc: "Cut-paste layers, texture-rich, editorial", search: "editorial mixed media collage graphic design cut paper",
+    prompt: `Editorial collage: 2-3 cut paper shapes layered on a solid color background. Visible torn edges. Mix of one photo fragment and flat color shapes. Art zine aesthetic. Sparse, not busy.`,
+    subject: "Use 2-3 fragments maximum. The empty space between pieces is as important as the pieces.",
+    richPrompt: `Editorial mixed-media collage: cut paper, photography fragments, hand-drawn marks, found textures. Layered composition with visible torn edges. Mix of photographic and illustrated elements. Art zine meets fashion editorial. Intentionally composed layers, not random.`,
+    richSubject: "Layer 4-6 visual fragments in a deliberate arrangement. Each piece should feel chosen and placed with purpose." },
+  { id: "conceptual-sketch", name: "Conceptual Sketch", desc: "Hand-drawn feel, whiteboard energy", search: "conceptual line drawing editorial illustration minimal sketch",
+    prompt: `Pen-and-ink sketch on white background. Single confident line drawing. Black ink with ONE accent color used sparingly. New Yorker cartoon simplicity. 70% of the image should be white space.`,
+    subject: "One clever visual metaphor. One drawing. Surrounded by white.",
+    richPrompt: `Confident pen-and-ink editorial illustration on white or cream background. Expressive line work with varying weight. Mostly black ink with one or two strategic accent color washes. New Yorker editorial illustration quality — witty, detailed where it matters, loose where it doesn't.`,
+    richSubject: "A complete scene or visual metaphor with enough detail to reward a closer look, but clear enough to read at thumbnail size." },
+  { id: "risograph", name: "Risograph", desc: "Textured, layered, indie-print feel", search: "risograph print illustration textured layered design",
+    prompt: `Risograph print: 2-3 overlapping color shapes on cream paper. Visible grain texture. Colors bleed where they overlap. Muted, warm palette. Simple geometric forms only. Indie zine aesthetic.`,
+    subject: "Render the concept as 2-3 simple overlapping shapes. No detail — let texture and color overlap carry it.",
+    richPrompt: `Risograph printing aesthetic: limited color palette (3-4 colors) with visible texture grain throughout. Colors overlap to create new tones at intersections. Slight misregistration between print layers. Paper texture visible. A complete composition that uses the print process as its visual language.`,
+    richSubject: "Render the subject with overlapping color layers that create depth and interest through the printing technique itself. Fill the frame with intentional texture." },
+  { id: "noir", name: "Noir / High Contrast", desc: "Dramatic B&W + one accent color", search: "noir high contrast illustration black white red accent editorial",
+    prompt: `High contrast noir. 90% black and white. Deep shadows, dramatic single light source. ONE small element in accent color. Film noir: moody, minimal, cinematic. Mostly darkness and silhouette.`,
+    subject: "A single silhouette or shadow. The accent color touches only one small detail.",
+    richPrompt: `High contrast noir illustration: predominantly black with strategic white highlights and dramatic directional lighting. One accent color used in 2-3 deliberate places. Film noir cinematography — strong silhouettes, venetian blind shadows, dramatic angles. Atmospheric and moody.`,
+    richSubject: "Stage a moody scene with dramatic lighting. Let shadows dominate but make the lit areas count. The accent color draws the eye exactly where you want it." },
+  { id: "papercut", name: "Papercut / 3D Paper", desc: "Layered depth, shadow play, tactile", search: "papercut art layered paper illustration 3D paper craft design",
+    prompt: `Papercut art: 3-4 flat color layers with soft drop shadows between them. Cut paper edges visible. ONE simple subject built from layered shapes. Clean, tactile, minimal. Solid color background.`,
+    subject: "Build ONE subject from paper layers. Background is a single solid color.",
+    richPrompt: `3D papercut illustration with 5-7 visible layers creating rich depth through shadow. Each layer a distinct flat color with realistic drop shadows between them. Cut paper edges visible throughout. Shadow box art meets editorial design. Tactile and dimensional.`,
+    richSubject: "Build a complete scene from layered paper — foreground, middleground, background. Each layer adds to the story. The depth between layers IS the visual interest." },
+  { id: "retrofuturism", name: "Retrofuturism", desc: "Vintage sci-fi, space-age optimism", search: "retrofuturism graphic design space age illustration poster",
+    prompt: `1960s retrofuturistic poster. Saul Bass simplicity. ONE bold geometric shape — circle, arc, or starburst — on flat background. Screen-print texture. 2-3 colors max. Space-age optimism, analog warmth.`,
+    subject: "Translate the concept into one retro-futuristic symbol. Atomic starburst, orbital arc, or rocket silhouette.",
+    richPrompt: `1960s retrofuturistic poster illustration. Saul Bass meets NASA concept art. Sleek curves, ray-gun gothic shapes, atomic starbursts, orbital paths. Visible grain or screen-print texture. Space-age optimism rendered with analog warmth. A complete poster-worthy composition.`,
+    richSubject: "Translate the concept into a retro-futuristic scene — data as orbital paths, growth as launch sequences, ideas as atomic reactions. Fill the frame like a vintage NASA poster." },
+  { id: "bauhaus", name: "Bauhaus", desc: "Primary shapes, primary colors, timeless", search: "bauhaus graphic design poster geometric primary colors",
+    prompt: `Bauhaus: circle, triangle, rectangle. Primary colors on dark background. Mathematical grid. 3 shapes maximum. No decoration, no texture, no detail. Pure geometric essentialism.`,
+    subject: "Reduce the concept to its single most essential geometric form.",
+    richPrompt: `Bauhaus-inspired composition: primary geometric shapes on a structured grid. Circles, triangles, rectangles overlapping with transparency to create secondary colors and forms. Mathematical precision with visual rhythm. Every element purposeful. No decoration — the geometry IS the design.`,
+    richSubject: "Build a balanced composition from 5-8 geometric elements that create rhythm and visual interest through their relationships." },
+  { id: "brutalism", name: "Brutalism", desc: "Raw, loud, anti-design, unapologetic", search: "brutalist graphic design poster raw typography punk zine",
+    prompt: `Brutalist graphic design. Extreme contrast: black, white, one loud color. Raw, exposed grid. ONE oversized element dominating the frame. Confrontational simplicity. Punk zine: less is more violent.`,
+    subject: "One element, blown up huge. Raw and direct. No decoration.",
+    richPrompt: `Brutalist graphic design — raw, confrontational, structured. Extreme contrast with exposed grid system. Clashing colors used deliberately. Soviet constructivist meets David Carson meets punk zine. Aggressive but composed. The rawness is the aesthetic, not sloppiness.`,
+    richSubject: "Fill the frame with raw visual energy — oversized elements, exposed structure, deliberate clashes. Confrontational but composed." },
+  { id: "surrealism", name: "Surrealism", desc: "Dreamlike, unexpected, thought-provoking", search: "surrealist editorial illustration magritte dreamlike modern",
+    prompt: `Surrealist image: one impossible scene, cleanly rendered. Magritte-style: calm, precise, deeply strange. Muted palette with one vivid area. Empty landscape or plain background. ONE visual paradox.`,
+    subject: "Create one impossible or unexpected visual. Simple composition, strange subject.",
+    richPrompt: `Surrealist editorial illustration: photorealistic rendering of impossible dreamlike scenarios. Unexpected scale shifts, objects in wrong contexts. Magritte-style — calm, precise, deeply strange. Muted palette with strategic vivid areas. The image should feel like a painting of a dream.`,
+    richSubject: "Create an impossible scene that metaphorically represents the subject. Multiple surreal elements can interact, but the overall composition should feel calm and deliberate, not chaotic." },
+  { id: "utilitarian", name: "Utilitarian / Data", desc: "Infographic-clean, information-forward", search: "utilitarian information design data visualization minimal infographic",
+    prompt: `Utilitarian information design on dark background. One clean chart, graph, or data visualization. Monospaced grid feel. Muted palette with one highlight color. Bloomberg terminal aesthetic. Sparse, organized.`,
+    subject: "Present the concept as one clean data element — a single chart, metric, or dashboard widget.",
+    richPrompt: `Clean utilitarian information design. Edward Tufte meets Bloomberg terminal. Multiple data elements — charts, graphs, grid lines, metrics — organized in a dense but structured layout. Monospaced aesthetic. Muted palette with one highlight color drawing focus. Data-rich but readable.`,
+    richSubject: "Present the concept as a rich data dashboard or analytical display. Multiple data visualizations working together in a structured grid." },
+  { id: "gradient-mesh", name: "Gradient Mesh", desc: "Smooth, modern, tech-forward", search: "gradient mesh modern graphic design smooth colorful tech",
+    prompt: `Smooth gradient mesh: flowing color transitions across the frame. Aurora-like. ONE frosted glass panel floating in center. Soft glow. No objects, no icons, no detail. Pure color and light.`,
+    subject: "Abstract the concept entirely into color and light. No literal representation.",
+    richPrompt: `Flowing gradient mesh with rich color transitions across the entire frame. Aurora-like color blends creating depth and movement. Multiple frosted glass or translucent elements floating at different depths. Soft glow effects and light refractions. Premium, polished, contemporary tech aesthetic.`,
+    richSubject: "Layer multiple gradient zones and translucent elements to create depth. The color transitions and light effects ARE the content." },
+  { id: "woodblock", name: "Woodblock Print", desc: "Bold, graphic, Japanese-inspired", search: "woodblock print illustration bold graphic japanese ukiyo-e modern",
+    prompt: `Woodblock print: bold black outlines, flat color fills, visible wood grain texture. ONE subject centered. Limited saturated palette (2-3 colors). Japanese ukiyo-e simplicity meets modern graphic poster.`,
+    subject: "One bold subject with confident outlines on a simple background.",
+    richPrompt: `Bold woodblock print: strong black outlines with flat color fills and visible wood grain texture running through the ink. Japanese ukiyo-e composition principles — foreground, middle, background layers. Limited but saturated palette. A complete scene with the handmade quality of relief printing.`,
+    richSubject: "Compose a full scene with foreground subject and background elements, all rendered in the bold woodblock style. Let the wood grain texture unify everything." },
+];
+
+const BRAND_STYLES = [
+  { id: "brand-apple", name: "Apple Minimal", desc: "Premium whitespace, clean product focus", search: "apple marketing design minimal clean product photography",
+    prompt: `Ultra-minimal. White or near-white background. ONE object, perfectly lit, perfectly centered. Enormous negative space. Soft shadow. Nothing else. Apple product photography level of restraint.`,
+    subject: "Isolate one single visual element. Remove everything else. Let it float in whitespace.",
+    richPrompt: `Ultra-premium product photography with extraordinary attention to lighting and material rendering. Clean, uncluttered composition but with rich surface detail — reflections, subtle gradients on materials, perfect shadows. Slightly wider shot showing the object in a minimal but considered environment.`,
+    richSubject: "Show the subject in a premium environment — clean surface, perfect lighting, subtle reflections. The restraint is in the composition, not the detail level." },
+  { id: "brand-newyorker", name: "New Yorker Cartoon", desc: "Witty line art, single accent, intellectual", search: "new yorker magazine cartoon illustration editorial line art",
+    prompt: `Single-panel editorial cartoon. Clean ink lines on white/cream. One or two flat color washes maximum. Figures drawn with economy — every line earns its place. 60% white space.`,
+    subject: "One witty scene. Minimal lines. Maximum white space.",
+    richPrompt: `Sophisticated editorial illustration with confident, expressive ink line work. Complete scene with background, characters, and environmental detail. One or two flat color washes applied with purpose. Witty, observational, cerebral — every detail serves the joke or insight.`,
+    richSubject: "A complete editorial scene with enough detail to discover something new on second look. Characters, setting, and visual commentary all working together." },
+  { id: "brand-spotify", name: "Spotify Wrapped", desc: "Bold color, data-as-design, playful energy", search: "spotify wrapped design bold color data visualization playful",
+    prompt: `Bold saturated color background. ONE oversized number, shape, or graphic element. Spotify Wrapped energy: celebratory but clean. 2-3 colors max. No clutter — the boldness IS the design.`,
+    subject: "Turn the concept into one bold, oversized graphic moment.",
+    richPrompt: `High-energy bold graphic design with saturated colors and dynamic composition. Multiple graphic elements — circles, organic blobs, data visualizations — layered in contrasting colors. Spotify Wrapped energy: celebratory, data-forward, youthful. Bold typography-scale shapes.`,
+    richSubject: "Turn the concept into a celebration with multiple bold graphic moments layered together. Data points as design elements. Energetic but structured." },
+  { id: "brand-stripe", name: "Stripe Developer", desc: "Gradient-rich, polished, dev-chic", search: "stripe design gradient modern developer brand tech",
+    prompt: `Rich flowing gradient: deep blues, purples, teals. ONE frosted glass element floating in gradient space. Clean, polished, minimal. Stripe.com aesthetic: simultaneously technical and beautiful. Nothing busy.`,
+    subject: "Present the concept as one elegant element floating in gradient space.",
+    richPrompt: `Ultra-polished tech aesthetic with rich flowing gradients — deep blues, purples, electric teals blending seamlessly. Multiple frosted glass panels and UI elements floating at different depths in gradient space. Simultaneously technical and beautiful. Stripe.com level of craft.`,
+    richSubject: "Present the concept as an elegant tech composition — floating UI elements, glass panels, and glowing accents in rich gradient space." },
+  { id: "brand-criterion", name: "Criterion Collection", desc: "Cinematic, art-house, typographic", search: "criterion collection design cinematic poster art house film",
+    prompt: `Cinematic art-house still. Deep moody palette: dark teal, burgundy, muted gold. Subject emerges from shadow. Dramatic single light source. Contemplative, quiet, deliberate. Mostly shadow and negative space.`,
+    subject: "Frame one element like a cinematic still — dramatic lighting, vast darkness around it.",
+    richPrompt: `Cinematic art-house composition. Deep moody palette with masterful use of light and shadow. Subject emerges from rich darkness with dramatic single-source lighting. Film grain, careful framing, mood over information. Every element placed like a cinematographer composed it.`,
+    richSubject: "Frame the subject like a scene from a Criterion film — dramatic lighting, rich shadows, mood and atmosphere filling every corner of the frame." },
+  { id: "brand-penguin", name: "Penguin Books", desc: "Iconic simple illustration, vintage print", search: "penguin books cover design simple illustration iconic vintage",
+    prompt: `Penguin Books cover: ONE striking conceptual illustration centered on a solid color field. Bold simplicity. Flat color, strong shapes. Iconic and instantly readable at any size.`,
+    subject: "Distill the concept into ONE visual symbol. Center it on a bold, flat color background.",
+    richPrompt: `Classic Penguin Books cover: a striking conceptual illustration on a bold tri-band color layout. The illustration is detailed enough to be iconic — clean lines, smart visual metaphor, readable at any size. The confidence of a design that's been in print for decades.`,
+    richSubject: "Create a detailed conceptual illustration that tells the whole story in one image. Place it on the classic color-band layout." },
+];
+
+const ALL_THUMB_STYLES = [...THUMB_STYLES, ...BRAND_STYLES];
+
+const AI_TOOLS = [
+  { id: "dalle", name: "DALL\u00b7E", suffix: (m) => ["photo","hybrid"].includes(m) ? "\n\nStyle: editorial photography, clean and minimal. 16:9 aspect ratio. Absolutely no text, words, letters, or typography anywhere in the image." : m === "editorial" ? "\n\nStyle: professional editorial photograph, magazine quality, clean. 16:9 aspect ratio. Absolutely no text, words, letters, or typography anywhere in the image." : m === "photo-graphic" ? "\n\nStyle: photorealistic subject on flat graphic background. 16:9 aspect ratio. Absolutely no text, words, letters, or typography anywhere in the image." : "\n\nStyle: clean digital illustration, minimal detail. 16:9 aspect ratio. Absolutely no text, words, letters, or typography anywhere in the image." },
+  { id: "midjourney", name: "Midjourney", suffix: (m) => ["photo","editorial","photo-graphic"].includes(m) ? "\n\n--ar 16:9 --s 50 --no text, words, letters, typography, labels, watermarks, signatures, clutter, busy, crowded, detailed background --style raw" : "\n\n--ar 16:9 --s 50 --no text, words, letters, typography, labels, watermarks, signatures, clutter, busy, crowded, detailed background" },
+  { id: "gemini", name: "Gemini", suffix: (m) => m === "editorial" ? "\n\nGenerate a 16:9 clean editorial photograph. Minimal, uncluttered. No text or letters anywhere." : m === "photo-graphic" ? "\n\nGenerate a 16:9 image: photorealistic subject on flat graphic background. Clean and simple. No text or letters anywhere." : ["photo","hybrid"].includes(m) ? "\n\nGenerate a 16:9 photorealistic image. Clean, minimal, uncluttered. No text or letters anywhere." : "\n\nGenerate a 16:9 clean illustration. Simple, minimal, uncluttered. No text or letters anywhere." },
+];
+
+/* ═══════════════════════════════════════════
+   DESIGN KIT DRAWING HELPERS
+   ═══════════════════════════════════════════ */
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(" ");
+  const lines = [];
+  let current = "";
+  for (const word of words) {
+    const test = current ? current + " " + word : word;
+    if (ctx.measureText(test).width > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else { current = test; }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+function fitText(ctx, text, maxWidth, maxLines, startSize, minSize, fontPrefix) {
+  let size = startSize;
+  while (size >= minSize) {
+    ctx.font = `${fontPrefix} ${size}px 'Oswald', sans-serif`;
+    const lines = wrapText(ctx, text, maxWidth);
+    if (lines.length <= maxLines) return { fontSize: size, lines, lineHeight: size * 1.15 };
+    size -= 2;
+  }
+  ctx.font = `${fontPrefix} ${minSize}px 'Oswald', sans-serif`;
+  let truncated = text;
+  while (truncated.length > 3) {
+    const lines = wrapText(ctx, truncated + "\u2026", maxWidth);
+    if (lines.length <= maxLines) return { fontSize: minSize, lines, lineHeight: minSize * 1.15 };
+    const lastSpace = truncated.lastIndexOf(" ");
+    if (lastSpace <= 0) break;
+    truncated = truncated.substring(0, lastSpace);
+  }
+  const lines = wrapText(ctx, truncated + "\u2026", maxWidth);
+  return { fontSize: minSize, lines: lines.slice(0, maxLines), lineHeight: minSize * 1.15 };
+}
+
+function fitSingleLine(ctx, text, maxWidth, startSize, minSize, fontPrefix) {
+  let size = startSize;
+  while (size >= minSize) {
+    ctx.font = `${fontPrefix} ${size}px 'Oswald', sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+    size -= 2;
+  }
+  ctx.font = `${fontPrefix} ${minSize}px 'Oswald', sans-serif`;
+  return minSize;
+}
+
+function drawLogo(ctx, img, x, y, size) {
+  if (!img) return;
+  const aspect = img.width / img.height;
+  let dw = size, dh = size;
+  if (aspect > 1) dh = size / aspect; else dw = size * aspect;
+  ctx.drawImage(img, x + (size - dw) / 2, y + (size - dh) / 2, dw, dh);
+}
+
+function drawInitials(ctx, name, x, y, size, accentColor) {
+  const initials = name.split(" ").map(w => w[0] || "").join("").substring(0, 2).toUpperCase() || "YN";
+  ctx.fillStyle = "#1a1a1a";
+  ctx.beginPath(); ctx.roundRect(x, y, size, size, 6); ctx.fill();
+  ctx.fillStyle = accentColor;
+  ctx.font = `bold ${size * 0.4}px 'Oswald', sans-serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(initials, x + size / 2, y + size / 2);
+  ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+}
+
+function drawLogoOrInitials(ctx, logo, name, x, y, size, accentColor) {
+  if (logo) drawLogo(ctx, logo, x, y, size);
+  else drawInitials(ctx, name, x, y, size, accentColor);
+}
+
+function drawBgCover(ctx, img, W, H, overlayOpacity) {
+  const imgA = img.width / img.height, canA = W / H;
+  let sx, sy, sw, sh;
+  if (imgA > canA) { sh = img.height; sw = img.height * canA; sx = (img.width - sw) / 2; sy = 0; }
+  else { sw = img.width; sh = img.width / canA; sx = 0; sy = (img.height - sh) / 2; }
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+  if (overlayOpacity > 0) { ctx.fillStyle = `rgba(0,0,0,${overlayOpacity / 100})`; ctx.fillRect(0, 0, W, H); }
+}
+
+/* ═══════════════════════════════════════════
+   DESIGN KIT DRAWING FUNCTIONS
+   ═══════════════════════════════════════════ */
+
+function drawPostHeader(ctx, inputs, style) {
+  const W = 1200, H = 630;
+  const { name, headline, prehead, url, darkColor, accentColor, logo, bgImage, overlayOpacity, showPrehead, showHeadline, showLogo, showUrl } = inputs;
+  const headText = (headline || "INSERT YOUR HEADLINE").toUpperCase();
+  const preText = (prehead || "INSERT YOUR PREHEAD").toUpperCase();
+  const hasBg = !!bgImage;
+
+  if (style === "diagonal") {
+    if (hasBg) { drawBgCover(ctx, bgImage, W, H, overlayOpacity); }
+    else {
+      ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = accentColor;
+      ctx.beginPath(); ctx.moveTo(W*0.58, 0); ctx.lineTo(W, 0); ctx.lineTo(W, H); ctx.lineTo(W*0.42, H); ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.fillStyle = accentColor; ctx.transform(1, 0, -0.4, 1, 0, 0); ctx.fillRect(780, 22, 80, 5); ctx.restore();
+    }
+    let barBottom = 56;
+    if (showPrehead) {
+      const preSize = fitSingleLine(ctx, preText, 600, 20, 12, "bold");
+      const barH = preSize + 16, barTop = 56;
+      barBottom = barTop + barH + 3;
+      ctx.fillStyle = accentColor; ctx.fillRect(56, barTop, 660, barH); ctx.fillRect(56, barTop - 5, 660, 2); ctx.fillRect(56, barTop + barH + 3, 660, 2);
+      ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(preText, 76, barTop + barH / 2); ctx.textBaseline = "alphabetic";
+    }
+    if (showHeadline) {
+      const fit = fitText(ctx, headText, 520, 3, 68, 32, "italic bold");
+      const zT = showPrehead ? barBottom + 40 : 56, zB = H - 70;
+      const bH = fit.lines.length * fit.lineHeight;
+      const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
+      ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
+      fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
+      ctx.textBaseline = "alphabetic";
+    }
+    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40); }
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 190, H - 200, 120, accentColor);
+
+  } else if (style === "bar") {
+    if (hasBg) drawBgCover(ctx, bgImage, W, H, overlayOpacity);
+    else { ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); }
+    ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 8); ctx.fillRect(56, H - 80, 300, 4);
+    if (showPrehead) { fitSingleLine(ctx, preText, 700, 18, 12, "bold"); ctx.fillStyle = accentColor; ctx.fillText(preText, 56, 90); }
+    if (showHeadline) {
+      const fit = fitText(ctx, headText, 800, 3, 72, 34, "bold");
+      const zT = showPrehead ? 120 : 60, zB = H - 70;
+      const bH = fit.lines.length * fit.lineHeight;
+      const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
+      ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
+      fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
+      ctx.textBaseline = "alphabetic";
+    }
+    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40); }
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 140, 40, 90, accentColor);
+
+  } else {
+    if (hasBg) drawBgCover(ctx, bgImage, W, H, overlayOpacity);
+    else { ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H); }
+    if (showPrehead) {
+      fitSingleLine(ctx, preText, 700, 20, 12, "bold");
+      ctx.fillStyle = darkColor; const pW = ctx.measureText(preText).width;
+      ctx.fillRect((W - pW) / 2 - 20, 140, pW + 40, 36);
+      ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(preText, W / 2, 158);
+      ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+    }
+    if (showHeadline) {
+      const fit = fitText(ctx, headText, 900, 3, 76, 34, "bold");
+      ctx.fillStyle = "#FFFFFF";
+      const bH = fit.lines.length * fit.lineHeight;
+      const zT = showPrehead ? 190 : 80, zB = H - 70;
+      const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      fit.lines.forEach((l, i) => ctx.fillText(l, W / 2, fY + i * fit.lineHeight));
+      ctx.textBaseline = "alphabetic"; ctx.textAlign = "start";
+    }
+    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.textAlign = "center"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36); ctx.textAlign = "start"; }
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 130, H - 110, 70, darkColor);
+  }
+}
+
+function drawProfileBanner(ctx, inputs, style) {
+  const W = 1200, H = 400;
+  const { name, tagline, url, darkColor, accentColor, logo } = inputs;
+  const nameText = (name || "YOUR NEWSLETTER").toUpperCase();
+  const tagText = tagline || "A short tagline about what you write";
+  if (style === "diagonal") {
+    ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = accentColor; ctx.beginPath(); ctx.moveTo(W*0.6, 0); ctx.lineTo(W, 0); ctx.lineTo(W, H); ctx.lineTo(W*0.42, H); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = accentColor; ctx.font = "bold 16px 'Oswald', sans-serif";
+    const catText = (inputs.category || "YOUR CATEGORY").toUpperCase(), cW = ctx.measureText(catText).width;
+    ctx.fillRect(56, 60, cW + 32, 30); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(catText, 72, 75); ctx.textBaseline = "alphabetic";
+    fitSingleLine(ctx, nameText, 500, 58, 28, "italic bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 170);
+    const tagFit = fitText(ctx, tagText, 480, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.6)";
+    tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 210 + i * tagFit.lineHeight));
+    ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36);
+    drawLogoOrInitials(ctx, logo, name, W - 170, H - 170, 110, accentColor);
+  } else if (style === "bar") {
+    ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 6);
+    fitSingleLine(ctx, nameText, 800, 54, 26, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 140);
+    ctx.fillStyle = accentColor; ctx.fillRect(56, 156, 200, 4);
+    const tagFit = fitText(ctx, tagText, 600, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.55)";
+    tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 200 + i * tagFit.lineHeight));
+    ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36);
+    drawLogoOrInitials(ctx, logo, name, W - 140, (H - 80) / 2, 80, accentColor);
+  } else {
+    ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H);
+    fitSingleLine(ctx, nameText, 900, 60, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.fillText(nameText, W / 2, 160);
+    fitSingleLine(ctx, tagText, 800, 20, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillText(tagText, W / 2, 210);
+    ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36);
+    ctx.textAlign = "start"; drawLogoOrInitials(ctx, logo, name, (W - 60) / 2, 250, 60, darkColor);
+  }
+}
+
+function drawEmailBanner(ctx, inputs, style) {
+  const W = 1100, H = 220;
+  const { name, tagline, darkColor, accentColor, logo } = inputs;
+  const nameText = (name || "YOUR NEWSLETTER").toUpperCase();
+  const tagText = tagline || "Your tagline goes here";
+  if (style === "diagonal") {
+    ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = accentColor; ctx.beginPath(); ctx.moveTo(W*0.78, 0); ctx.lineTo(W, 0); ctx.lineTo(W, H); ctx.lineTo(W*0.68, H); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W*0.75, 4);
+    fitSingleLine(ctx, nameText, 700, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42);
+    fitSingleLine(ctx, tagText.toUpperCase(), 700, 16, 11, "400"); ctx.fillStyle = accentColor; ctx.fillText(tagText.toUpperCase(), 40, H * 0.68); ctx.textBaseline = "alphabetic";
+    drawLogoOrInitials(ctx, logo, name, W - 130, (H - 80) / 2, 80, accentColor);
+  } else if (style === "bar") {
+    ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 5); ctx.fillRect(0, H - 5, W, 5);
+    fitSingleLine(ctx, nameText, 800, 44, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(nameText, W / 2, H * 0.4);
+    fitSingleLine(ctx, tagText, 700, 16, 11, "400"); ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fillText(tagText, W / 2, H * 0.65);
+    ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+  } else {
+    ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H);
+    fitSingleLine(ctx, nameText, 750, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42);
+    fitSingleLine(ctx, tagText, 750, 16, 11, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillText(tagText, 40, H * 0.68); ctx.textBaseline = "alphabetic";
+    drawLogoOrInitials(ctx, logo, name, W - 120, (H - 70) / 2, 70, darkColor);
+  }
+}
+
+function drawWordmark(ctx, inputs, style) {
+  const W = 1344, H = 256;
+  const { name, accentColor, darkColor, logo } = inputs;
+  ctx.clearRect(0, 0, W, H);
+  const displayName = (name || "YOUR NEWSLETTER").toUpperCase();
+  const logoSize = 140, gap = 28, logoX = 48, logoY = (H - logoSize) / 2;
+  const textX = logoX + logoSize + gap, maxTextW = W - textX - 40;
+  if (style === "diagonal") {
+    ctx.save(); ctx.fillStyle = accentColor; ctx.globalAlpha = 0.15;
+    ctx.beginPath(); ctx.moveTo(100, 0); ctx.lineTo(180, 0); ctx.lineTo(80, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill(); ctx.restore();
+    drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic";
+  } else if (style === "bar") {
+    drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    const size = fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 - 6);
+    ctx.fillStyle = accentColor; const tW = ctx.measureText(displayName).width; ctx.fillRect(textX, H / 2 + size * 0.42, Math.min(tW, maxTextW), 6); ctx.textBaseline = "alphabetic";
+  } else {
+    drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = accentColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic";
+  }
+}
+
+const DRAW_FNS = { postHeader: drawPostHeader, profileBanner: drawProfileBanner, emailBanner: drawEmailBanner, wordmark: drawWordmark };
+
+/* ═══════════════════════════════════════════
+   UI COMPONENTS
+   ═══════════════════════════════════════════ */
+
+const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: "#999", marginBottom: 6, textTransform: "uppercase", letterSpacing: "1px" };
+const hexInputStyle = { width: 72, padding: "4px 6px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, color: "#aaa", fontSize: 12, fontFamily: "monospace" };
+
+function Field({ label, value, onChange, placeholder }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <input type="text" value={value} onChange={onChange} placeholder={placeholder}
+        style={{ width: "100%", padding: "8px 12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+    </div>
+  );
+}
+
+function Toggle({ on, onToggle, label }) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontSize: 13, color: "#ccc" }}>
+      <div onClick={onToggle} style={{ width: 36, height: 20, borderRadius: 10, background: on ? "#FF6719" : "#333", position: "relative", transition: "background 0.2s", cursor: "pointer", flexShrink: 0 }}>
+        <div style={{ width: 16, height: 16, borderRadius: 8, background: "#fff", position: "absolute", top: 2, left: on ? 18 : 2, transition: "left 0.2s" }} />
+      </div>
+      {label}
+    </label>
+  );
+}
+
+function StyleCard({ style, selected, onClick }) {
+  const Preview = SVG_MAP[style.id];
+  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(style.search)}&tbm=isch`;
+  return (
+    <div style={{ background: selected ? "#1f1f1f" : "#1a1a1a", border: selected ? "2px solid #FF6719" : "2px solid #2a2a2a", borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column", transition: "all 0.15s" }}>
+      <button onClick={onClick} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", display: "flex", flexDirection: "column", flex: 1 }}>
+        <div style={{ width: "100%", aspectRatio: "16/9", overflow: "hidden", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {Preview && <Preview />}
+        </div>
+        <div style={{ padding: "10px 12px 4px" }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: selected ? "#FF6719" : "#f0f0f0", marginBottom: 2 }}>{style.name}</div>
+          <div style={{ fontSize: 11, color: "#888", lineHeight: 1.3 }}>{style.desc}</div>
+        </div>
+      </button>
+      <div style={{ padding: "2px 12px 10px" }}>
+        <a href={searchUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+          style={{ fontSize: 10, fontWeight: 700, color: "#FF6719", textDecoration: "none", opacity: 0.7 }}
+          onMouseEnter={e => e.target.style.opacity = 1} onMouseLeave={e => e.target.style.opacity = 0.7}>
+          See examples \u2192
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   MAIN APP
+   ═══════════════════════════════════════════ */
+
+function App() {
+  const [tab, setTab] = useState("templates");
+
+  // Shared state
+  const [inputs, setInputs] = useState({ ...DEFAULT_INPUTS });
+  const [kitStyle, setKitStyle] = useState("diagonal");
+  const [fontLoaded, setFontLoaded] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [bgPreview, setBgPreview] = useState(null);
+  const canvasRefs = useRef({});
+
+  // Thumbnail generator state
+  const [thumbStyle, setThumbStyle] = useState(null);
+  const [renderMode, setRenderMode] = useState("illustration");
+  const [complexity, setComplexity] = useState("clean");
+  const [topic, setTopic] = useState("");
+  const [aiTool, setAiTool] = useState("dalle");
+  const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  // Font loading
+  useEffect(() => {
+    const loadFonts = async () => {
+      const weights = [
+        ["400", "TK3_WkUHHAIjg75cFRf3bXL8LICs1xFvsUZiYQ0.woff2"],
+        ["700", "TK3_WkUHHAIjg75cFRf3bXL8LICs1-FvsUZiYQ0.woff2"],
+      ];
+      for (const [weight, file] of weights) {
+        try {
+          const f = new FontFace("Oswald", `url(https://fonts.gstatic.com/s/oswald/v53/${file})`, { weight });
+          document.fonts.add(await f.load());
+        } catch (e) {}
+      }
+      setFontLoaded(true);
+    };
+    loadFonts();
+  }, []);
+
+  // Canvas redraw
+  const redraw = useCallback(() => {
+    if (!fontLoaded) return;
+    for (const t of TEMPLATES) {
+      const canvas = canvasRefs.current[t.id];
+      if (!canvas) continue;
+      canvas.width = t.width; canvas.height = t.height;
+      const ctx = canvas.getContext("2d");
+      if (t.id === "wordmark") ctx.clearRect(0, 0, t.width, t.height);
+      else { ctx.fillStyle = inputs.darkColor; ctx.fillRect(0, 0, t.width, t.height); }
+      DRAW_FNS[t.id](ctx, inputs, kitStyle);
+    }
+  }, [inputs, kitStyle, fontLoaded]);
+
+  useEffect(() => { if (tab === "templates") redraw(); }, [redraw, tab]);
+
+  // Prompt generation
+  useEffect(() => {
+    const s = ALL_THUMB_STYLES.find(st => st.id === thumbStyle);
+    const tool = AI_TOOLS.find(t => t.id === aiTool);
+    if (!s || !topic.trim() || !tool) { setGeneratedPrompt(""); return; }
+    const colorStr = `${inputs.accentColor}, ${inputs.darkColor}, #FFFFFF`;
+    const renderInstructions = {
+      illustration: "",
+      photo: `\n\nRENDERING: Photorealistic subjects processed through the ${s.name} aesthetic as a color/composition filter. Real-looking people and objects. Keep it clean and editorial.`,
+      hybrid: `\n\nRENDERING: Real photographic subject against a stylized ${s.name} background. Sharp photo subject, illustrated/graphic environment. Clear separation between the two.`,
+      editorial: `\n\nRENDERING: Clean editorial photography. Professional lighting, minimal post-processing. The ${s.name} style influences color grading and composition only. Magazine quality.`,
+      "photo-graphic": `\n\nRENDERING: Photorealistic subject on a flat, graphic ${s.name}-styled background. Bold contrast between real photo and flat design.`,
+    };
+    const ri = renderInstructions[renderMode] || "";
+    const prompt = `Create a newsletter thumbnail image for: "${topic.trim()}"
+
+STYLE: ${s.name} — ${complexity === "rich" ? (s.richPrompt || s.prompt) : s.prompt}
+
+SUBJECT: ${complexity === "rich" ? (s.richSubject || s.subject) : s.subject}${ri}
+
+PALETTE: ${colorStr} — adapt to the style's aesthetic.
+
+RULES:
+- Landscape 16:9, works at thumbnail size
+${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purposeful design, not clutter
+- Every element should earn its place — nothing random or decorative for decoration's sake
+- Rich detail is good; visual noise is not. Think well-designed poster, not AI-generated chaos` : `- SIMPLE composition: one focal element, generous negative space
+- Do NOT fill the frame — leave breathing room
+- Do NOT add decorative elements, textures, or details that weren't specified`}
+- ZERO text, words, letters, numbers, or typography in the image${tool.suffix(renderMode)}`;
+    setGeneratedPrompt(prompt);
+
+    setCopied(false);
+  }, [thumbStyle, renderMode, complexity, topic, aiTool, inputs.accentColor, inputs.darkColor]);
+
+  // Handlers
+  const handleChange = (field) => (e) => setInputs(prev => ({ ...prev, [field]: e.target.value }));
+
+  const handleLogo = (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { const img = new Image(); img.onload = () => { setInputs(prev => ({ ...prev, logo: img })); setLogoPreview(ev.target.result); }; img.src = ev.target.result; };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBgImage = (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { const img = new Image(); img.onload = () => { setInputs(prev => ({ ...prev, bgImage: img })); setBgPreview(ev.target.result); }; img.src = ev.target.result; };
+    reader.readAsDataURL(file);
+  };
+
+  const download = (templateId) => {
+    const canvas = canvasRefs.current[templateId]; if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = `substack-${templateId}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  const downloadAll = () => TEMPLATES.forEach((t, i) => setTimeout(() => download(t.id), i * 300));
+
+  const copyPrompt = () => {
+    try {
+      const ta = document.createElement("textarea"); ta.value = generatedPrompt; ta.style.position = "fixed"; ta.style.left = "-9999px";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
+    } catch (e) {}
+  };
+
+  const resetAll = () => { setInputs({ ...DEFAULT_INPUTS }); setLogoPreview(null); setBgPreview(null); };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#111", color: "#fff", fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+      {/* ═══ HEADER ═══ */}
+      <div style={{ borderBottom: "1px solid #2a2a2a", padding: "20px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>Substack Design Kit</h1>
+          <div style={{ display: "flex", gap: 4, background: "#1a1a1a", borderRadius: 8, padding: 3 }}>
+            {[["templates", "Templates"], ["thumbnail", "Thumbnail AI"]].map(([id, label]) => (
+              <button key={id} onClick={() => setTab(id)} style={{
+                padding: "7px 16px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "none", cursor: "pointer", transition: "all 0.15s",
+                background: tab === id ? "#FF6719" : "transparent", color: tab === id ? "#fff" : "#888",
+              }}>{label}</button>
+            ))}
+          </div>
+        </div>
+        {tab === "templates" && (
+          <button onClick={downloadAll} style={{ background: "#FF6719", color: "#fff", border: "none", borderRadius: 6, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            Download All
+          </button>
+        )}
+        {tab === "thumbnail" && generatedPrompt && (
+          <button onClick={copyPrompt} style={{ background: copied ? "#2a2a2a" : "#FF6719", color: "#fff", border: "none", borderRadius: 6, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.15s" }}>
+            {copied ? "\u2713 Copied!" : "Copy Prompt"}
+          </button>
+        )}
+      </div>
+
+      {/* ═══ TEMPLATES TAB ═══ */}
+      {tab === "templates" && (
+        <div style={{ display: "flex", minHeight: "calc(100vh - 68px)" }}>
+          {/* Sidebar */}
+          <div style={{ width: 300, flexShrink: 0, borderRight: "1px solid #2a2a2a", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
+            {/* Style Picker */}
+            <div>
+              <label style={labelStyle}>Style</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                {KIT_STYLES.map(s => (
+                  <button key={s.id} onClick={() => setKitStyle(s.id)} style={{
+                    flex: 1, padding: "8px 4px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                    border: kitStyle === s.id ? "2px solid #FF6719" : "2px solid #333",
+                    background: kitStyle === s.id ? "rgba(255,103,25,0.1)" : "#1a1a1a",
+                    color: kitStyle === s.id ? "#FF6719" : "#888",
+                  }}>{s.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Colors */}
+            <div>
+              <label style={labelStyle}>Colors</label>
+              <div style={{ display: "flex", gap: 10 }}>
+                {[["darkColor", "Dark"], ["accentColor", "Accent"]].map(([field, label]) => (
+                  <div key={field} style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>{label}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input type="color" value={inputs[field]} onChange={handleChange(field)} style={{ width: 36, height: 36, border: "none", borderRadius: 4, cursor: "pointer", background: "none" }} />
+                      <input type="text" value={inputs[field]} onChange={handleChange(field)} style={hexInputStyle} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Pick */}
+            <div>
+              <label style={labelStyle}>Quick Pick</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {PALETTES.map(p => {
+                  const isActive = inputs.darkColor.toLowerCase() === p.dark.toLowerCase() && inputs.accentColor.toLowerCase() === p.accent.toLowerCase();
+                  return (
+                    <button key={p.label} title={p.label} onClick={() => setInputs(prev => ({ ...prev, darkColor: p.dark, accentColor: p.accent }))}
+                      style={{ width: 48, height: 28, borderRadius: 6, border: isActive ? "2px solid #fff" : "2px solid #333", cursor: "pointer", padding: 0, overflow: "hidden", display: "flex" }}>
+                      <div style={{ width: "50%", height: "100%", background: p.dark }} />
+                      <div style={{ width: "50%", height: "100%", background: p.accent }} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Logo */}
+            <div>
+              <label style={labelStyle}>Logo</label>
+              {logoPreview ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <img src={logoPreview} alt="logo" style={{ width: 48, height: 48, objectFit: "contain", borderRadius: 4, background: "#222" }} />
+                  <button onClick={() => { setInputs(prev => ({ ...prev, logo: null })); setLogoPreview(null); }} style={{ fontSize: 12, color: "#ff4444", background: "none", border: "1px solid #ff4444", borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>Remove</button>
+                </div>
+              ) : (
+                <label style={{ display: "block", padding: "14px", border: "2px dashed #333", borderRadius: 8, textAlign: "center", cursor: "pointer", fontSize: 13, color: "#666" }}>
+                  Upload PNG or SVG
+                  <input type="file" accept="image/*" onChange={handleLogo} style={{ display: "none" }} />
+                </label>
+              )}
+              <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>No logo? Initials are auto-generated.</div>
+            </div>
+
+            {/* Background Image */}
+            <div>
+              <label style={labelStyle}>Post Header Background</label>
+              {bgPreview ? (
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                    <img src={bgPreview} alt="bg" style={{ width: 80, height: 42, objectFit: "cover", borderRadius: 4, border: "1px solid #333" }} />
+                    <button onClick={() => { setInputs(prev => ({ ...prev, bgImage: null })); setBgPreview(null); }} style={{ fontSize: 12, color: "#ff4444", background: "none", border: "1px solid #ff4444", borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>Remove</button>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>Overlay darkness: {inputs.overlayOpacity}%</div>
+                  <input type="range" min="0" max="85" value={inputs.overlayOpacity} onChange={(e) => setInputs(prev => ({ ...prev, overlayOpacity: Number(e.target.value) }))} style={{ width: "100%", accentColor: "#FF6719" }} />
+                </div>
+              ) : (
+                <label style={{ display: "block", padding: "14px", border: "2px dashed #333", borderRadius: 8, textAlign: "center", cursor: "pointer", fontSize: 13, color: "#666" }}>
+                  Upload image (optional)
+                  <input type="file" accept="image/*" onChange={handleBgImage} style={{ display: "none" }} />
+                </label>
+              )}
+              <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>Upload an AI-generated image or photo. Text overlays on top.</div>
+            </div>
+
+            {/* Toggles */}
+            <div>
+              <label style={labelStyle}>Post Header Elements</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[["showPrehead", "Prehead"], ["showHeadline", "Headline"], ["showLogo", "Logo"], ["showUrl", "URL"]].map(([key, label]) => (
+                  <Toggle key={key} on={inputs[key]} onToggle={() => setInputs(prev => ({ ...prev, [key]: !prev[key] }))} label={label} />
+                ))}
+              </div>
+            </div>
+
+            <hr style={{ border: "none", borderTop: "1px solid #222", margin: "4px 0" }} />
+
+            <Field label="Newsletter Name" value={inputs.name} onChange={handleChange("name")} placeholder="Your Newsletter" />
+            <Field label="Prehead" value={inputs.prehead} onChange={handleChange("prehead")} placeholder="Insert Your Prehead" />
+            <Field label="Category" value={inputs.category} onChange={handleChange("category")} placeholder="Your Category" />
+            <Field label="Headline" value={inputs.headline} onChange={handleChange("headline")} placeholder="Insert Your Headline" />
+            <Field label="Tagline" value={inputs.tagline} onChange={handleChange("tagline")} placeholder="A short tagline about what you write" />
+            <Field label="URL" value={inputs.url} onChange={handleChange("url")} placeholder="yourstack.substack.com" />
+
+            <hr style={{ border: "none", borderTop: "1px solid #222", margin: "4px 0" }} />
+            <button onClick={resetAll} style={{ width: "100%", padding: "10px", fontSize: 13, fontWeight: 600, background: "none", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
+              Reset All
+            </button>
+          </div>
+
+          {/* Preview Area */}
+          <div style={{ flex: 1, padding: "24px 32px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 32 }}>
+            {TEMPLATES.map(t => (
+              <div key={t.id}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{t.label}</span>
+                    <span style={{ color: "#666", fontSize: 13, marginLeft: 10 }}>{t.desc}</span>
+                  </div>
+                  <button onClick={() => download(t.id)} style={{ background: "#222", color: "#ccc", border: "1px solid #333", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Download PNG
+                  </button>
+                </div>
+                <div style={{ background: t.id === "wordmark" ? "repeating-conic-gradient(#2a2a2a 0% 25%, #1a1a1a 0% 50%) 50% / 16px 16px" : "#0a0a0a", borderRadius: 8, padding: 12, border: "1px solid #222" }}>
+                  <canvas ref={el => canvasRefs.current[t.id] = el} width={t.width} height={t.height}
+                    style={{ width: "100%", height: "auto", display: "block", borderRadius: 4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ THUMBNAIL AI TAB ═══ */}
+      {tab === "thumbnail" && (
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "28px 32px" }}>
+          <p style={{ fontSize: 14, color: "#888", marginBottom: 28, lineHeight: 1.5 }}>
+            Pick a visual style, enter your topic, and get an AI image prompt. The generated image can be uploaded as a post header background in the Templates tab.
+          </p>
+
+          {/* Step 1: Style \u2014 Horizontal Carousel */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 12 }}>1 \u2014 Visual Style</div>
+            <div style={{ overflowX: "auto", paddingBottom: 8, WebkitOverflowScrolling: "touch" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 8 }}>Design Styles</div>
+              <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                {THUMB_STYLES.map(s => (
+                  <div key={s.id} style={{ minWidth: 180, maxWidth: 180, flexShrink: 0 }}>
+                    <StyleCard style={s} selected={thumbStyle === s.id} onClick={() => setThumbStyle(s.id)} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 8 }}>Brand Inspired</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                {BRAND_STYLES.map(s => (
+                  <div key={s.id} style={{ minWidth: 180, maxWidth: 180, flexShrink: 0 }}>
+                    <StyleCard style={s} selected={thumbStyle === s.id} onClick={() => setThumbStyle(s.id)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Step 2: Rendering + Colors */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 12 }}>2 \u2014 Rendering</div>
+              <div style={{ display: "flex", gap: 8, marginBottom: renderMode !== "illustration" ? 10 : 0 }}>
+                {[["illustration", "Illustrated"], ["photo", "Photography"]].map(([id, label]) => {
+                  const isActive = id === "illustration" ? renderMode === "illustration" : renderMode !== "illustration";
+                  return (
+                    <button key={id} onClick={() => setRenderMode(id === "illustration" ? "illustration" : "photo")} style={{
+                      flex: 1, padding: "10px 16px", borderRadius: 8, border: isActive ? "2px solid #FF6719" : "2px solid #2a2a2a",
+                      background: isActive ? "rgba(255,103,25,0.1)" : "#1a1a1a", color: isActive ? "#FF6719" : "#ccc",
+                      fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                    }}>{label}</button>
+                  );
+                })}
+              </div>
+              {renderMode !== "illustration" && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {[["photo", "Style as Filter"], ["hybrid", "Hybrid"], ["editorial", "Clean Editorial"], ["photo-graphic", "Photo + Graphic BG"]].map(([id, label]) => (
+                    <button key={id} onClick={() => setRenderMode(id)} style={{
+                      padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                      border: renderMode === id ? "1.5px solid #FF6719" : "1.5px solid #333",
+                      background: renderMode === id ? "rgba(255,103,25,0.15)" : "#151515",
+                      color: renderMode === id ? "#FF6719" : "#999",
+                    }}>{label}</button>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>Complexity</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[["clean", "Clean", "Minimal, one focal element"], ["rich", "Rich", "Full composition, intentional detail"]].map(([id, label, desc]) => (
+                    <button key={id} onClick={() => setComplexity(id)} style={{
+                      flex: 1, padding: "8px 12px", borderRadius: 8, cursor: "pointer", transition: "all 0.15s", textAlign: "left",
+                      border: complexity === id ? "1.5px solid #FF6719" : "1.5px solid #2a2a2a",
+                      background: complexity === id ? "rgba(255,103,25,0.1)" : "#151515",
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: complexity === id ? "#FF6719" : "#ccc", marginBottom: 2 }}>{label}</div>
+                      <div style={{ fontSize: 10, color: "#666", lineHeight: 1.3 }}>{desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 12 }}>Colors</div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 3, padding: 4, background: "#1a1a1a", borderRadius: 8, border: "1px solid #2a2a2a" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "6px 2px 2px 6px", background: inputs.accentColor }} />
+                  <div style={{ width: 28, height: 28, borderRadius: "2px", background: inputs.darkColor }} />
+                  <div style={{ width: 28, height: 28, borderRadius: "2px 6px 6px 2px", background: "#FFFFFF" }} />
+                </div>
+                <span style={{ fontSize: 12, color: "#666" }}>Using your brand colors from Templates</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 3: Topic + AI Tool */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 20, marginBottom: 28, alignItems: "start" }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 12 }}>3 — Article Topic</div>
+              <textarea value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. How I grew my newsletter from 0 to 10K subscribers using SEO..." rows={3}
+                style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: "#fff", resize: "vertical", lineHeight: 1.5, fontFamily: "inherit" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 12 }}>AI Tool</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {AI_TOOLS.map(t => (
+                  <button key={t.id} onClick={() => setAiTool(t.id)} style={{
+                    padding: "8px 16px", borderRadius: 8, border: aiTool === t.id ? "2px solid #FF6719" : "2px solid #2a2a2a",
+                    background: aiTool === t.id ? "rgba(255,103,25,0.1)" : "#1a1a1a", color: aiTool === t.id ? "#FF6719" : "#ccc",
+                    fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.15s", fontFamily: "inherit",
+                  }}>{t.name}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Output */}
+          {generatedPrompt ? (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "1.5px" }}>Your Prompt</div>
+                <button onClick={copyPrompt} style={{
+                  background: copied ? "#2a2a2a" : "#FF6719", color: "#fff", border: "none", borderRadius: 6,
+                  padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                }}>{copied ? "\u2713 Copied!" : "Copy Prompt"}</button>
+              </div>
+              <div className="prompt-box">{generatedPrompt}</div>
+              <div style={{ marginTop: 16, padding: "14px 16px", background: "rgba(255,103,25,0.08)", borderRadius: 10, borderLeft: "3px solid #FF6719" }}>
+                <div style={{ fontSize: 12, color: "#999", lineHeight: 1.6 }}>
+                  <strong style={{ color: "#ccc" }}>Next step:</strong> Paste this prompt into your AI image tool, download the result, then switch to the <strong style={{ color: "#FF6719", cursor: "pointer" }} onClick={() => setTab("templates")}>Templates tab</strong> and upload it as a Post Header Background.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ border: "2px dashed #2a2a2a", borderRadius: 12, padding: "40px 24px", textAlign: "center", color: "#666" }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>&#127912;</div>
+              <p style={{ fontSize: 13, lineHeight: 1.5 }}>
+                {!thumbStyle ? "Start by picking a visual style above" : "Enter your article topic to generate a prompt"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
