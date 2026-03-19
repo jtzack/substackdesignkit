@@ -352,9 +352,9 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
       const preSize = fitSingleLine(ctx, preText, 600, 20, 12, "bold");
       const barH = preSize + 16, barTop = 56;
       barBottom = barTop + barH + 3;
-      ctx.fillStyle = accentColor; ctx.fillRect(56, barTop, 660, barH); ctx.fillRect(56, barTop - 5, 660, 2); ctx.fillRect(56, barTop + barH + 3, 660, 2);
-      ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(preText, 76, barTop + barH / 2); ctx.textBaseline = "alphabetic";
-      hb.prehead = { x: 56 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: 660, h: barH + 10 };
+      ctx.fillStyle = accentColor; ctx.fillRect(106, barTop, 660, barH); ctx.fillRect(106, barTop - 5, 660, 2); ctx.fillRect(106, barTop + barH + 3, 660, 2);
+      ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(preText, 126, barTop + barH / 2); ctx.textBaseline = "alphabetic";
+      hb.prehead = { x: 106 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: 660, h: barH + 10 };
       ctx.restore();
     }
     if (showHeadline) {
@@ -364,16 +364,16 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
       const bH = fit.lines.length * fit.lineHeight;
       const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
       ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
-      fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
+      fit.lines.forEach((l, i) => ctx.fillText(l, 106, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic";
-      hb.headline = { x: 56 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 520, h: bH };
+      hb.headline = { x: 106 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 520, h: bH };
       ctx.restore();
     }
     if (showUrl) {
       ctx.save(); ctx.translate(off.url.dx, off.url.dy);
-      ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40);
+      ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 106, H - 40);
       const uW = ctx.measureText(url || "yourstack.substack.com").width;
-      hb.url = { x: 56 + off.url.dx, y: H - 56 + off.url.dy, w: uW, h: 24 };
+      hb.url = { x: 106 + off.url.dx, y: H - 56 + off.url.dy, w: uW, h: 24 };
       ctx.restore();
     }
     if (showLogo) {
