@@ -629,24 +629,26 @@ function App() {
   useEffect(() => {
     const loadFonts = async () => {
       const weights = [
-        ["400", "TK3_WkUHHAIjg75cFRf3bXL8LICs1xFvsUZiYQ0.woff2"],
-        ["700", "TK3_WkUHHAIjg75cFRf3bXL8LICs1-FvsUZiYQ0.woff2"],
+        ["400", "normal", "TK3_WkUHHAIjg75cFRf3bXL8LICs1xFvsUZiYQ0.woff2"],
+        ["700", "normal", "TK3_WkUHHAIjg75cFRf3bXL8LICs1-FvsUZiYQ0.woff2"],
       ];
-      for (const [weight, file] of weights) {
+      for (const [weight, style, file] of weights) {
         try {
-          const f = new FontFace("Oswald", `url(https://fonts.gstatic.com/s/oswald/v53/${file})`, { weight });
+          const f = new FontFace("Oswald", `url(https://fonts.gstatic.com/s/oswald/v53/${file})`, { weight, style });
           document.fonts.add(await f.load());
         } catch (e) {}
       }
+      // Wait for ALL fonts including italic variants from CSS <link> to be ready
+      const needed = ["400 48px Oswald", "bold 48px Oswald", "italic 48px Oswald", "italic bold 48px Oswald"];
+      const waitForAll = () => new Promise(resolve => {
+        const check = () => {
+          if (needed.every(f => document.fonts.check(f))) return resolve();
+          requestAnimationFrame(check);
+        };
+        check();
+      });
       await document.fonts.ready;
-      // Prime canvas contexts so the font is usable on first draw
-      const probe = document.createElement("canvas").getContext("2d");
-      probe.font = "bold 48px 'Oswald', sans-serif";
-      probe.measureText("X");
-      probe.font = "italic bold 48px 'Oswald', sans-serif";
-      probe.measureText("X");
-      // Allow a frame for the browser to fully commit the font
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await waitForAll();
       setFontLoaded(true);
     };
     loadFonts();
