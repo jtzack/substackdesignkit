@@ -322,7 +322,7 @@ function drawBgCover(ctx, img, W, H, overlayOpacity) {
 function drawPostHeader(ctx, inputs, style) {
   const W = 1200, H = 630;
   const { name, headline, prehead, url, darkColor, accentColor, logo, bgImage, overlayOpacity, showPrehead, showHeadline, showLogo, showUrl } = inputs;
-  const headText = (headline || name || "INSERT YOUR HEADLINE").toUpperCase();
+  const headText = (headline || "INSERT YOUR HEADLINE").toUpperCase();
   const preText = (prehead || "INSERT YOUR PREHEAD").toUpperCase();
   const hasBg = !!bgImage;
 
