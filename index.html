@@ -60,7 +60,7 @@ const DEFAULT_OFFSETS = { prehead: { dx: 0, dy: 0 }, headline: { dx: 0, dy: 0 },
 const DEFAULT_INPUTS = {
   name: "", headline: "", prehead: "", category: "", tagline: "", url: "",
   darkColor: "#333333", accentColor: "#FF6719",
-  logo: null, bgImage: null, overlayOpacity: 50,
+  logo: null, bgImage: null, overlayOpacity: 50, logoOpacity: 100,
   showPrehead: true, showHeadline: true, showLogo: true, showUrl: true,
 };
 
@@ -309,9 +309,11 @@ function drawInitials(ctx, name, x, y, size, accentColor) {
   ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
 }
 
-function drawLogoOrInitials(ctx, logo, name, x, y, size, accentColor) {
+function drawLogoOrInitials(ctx, logo, name, x, y, size, accentColor, opacity) {
+  ctx.save(); ctx.globalAlpha = (opacity != null ? opacity : 100) / 100;
   if (logo) drawLogo(ctx, logo, x, y, size);
   else drawInitials(ctx, name, x, y, size, accentColor);
+  ctx.restore();
 }
 
 function drawBgCover(ctx, img, W, H, overlayOpacity) {
@@ -329,7 +331,7 @@ function drawBgCover(ctx, img, W, H, overlayOpacity) {
 
 function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
   const W = 1200, H = 630;
-  const { name, headline, prehead, url, darkColor, accentColor, logo, bgImage, overlayOpacity, showPrehead, showHeadline, showLogo, showUrl } = inputs;
+  const { name, headline, prehead, url, darkColor, accentColor, logo, bgImage, overlayOpacity, logoOpacity, showPrehead, showHeadline, showLogo, showUrl } = inputs;
   const headText = (headline || "INSERT YOUR HEADLINE").toUpperCase();
   const preText = (prehead || "INSERT YOUR PREHEAD").toUpperCase();
   const hasBg = !!bgImage;
@@ -376,7 +378,7 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
     }
     if (showLogo) {
       ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
-      drawLogoOrInitials(ctx, logo, name, W - 190, H - 200, 120, accentColor);
+      drawLogoOrInitials(ctx, logo, name, W - 190, H - 200, 120, accentColor, logoOpacity);
       hb.logo = { x: W - 190 + off.logo.dx, y: H - 200 + off.logo.dy, w: 120, h: 120 };
       ctx.restore();
     }
@@ -413,7 +415,7 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
     }
     if (showLogo) {
       ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
-      drawLogoOrInitials(ctx, logo, name, W - 140, 40, 90, accentColor);
+      drawLogoOrInitials(ctx, logo, name, W - 140, 40, 90, accentColor, logoOpacity);
       hb.logo = { x: W - 140 + off.logo.dx, y: 40 + off.logo.dy, w: 90, h: 90 };
       ctx.restore();
     }
@@ -454,7 +456,7 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
     }
     if (showLogo) {
       ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
-      drawLogoOrInitials(ctx, logo, name, W - 130, H - 110, 70, darkColor);
+      drawLogoOrInitials(ctx, logo, name, W - 130, H - 110, 70, darkColor, logoOpacity);
       hb.logo = { x: W - 130 + off.logo.dx, y: H - 110 + off.logo.dy, w: 70, h: 70 };
       ctx.restore();
     }
@@ -463,7 +465,7 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
 
 function drawProfileBanner(ctx, inputs, style) {
   const W = 1200, H = 400;
-  const { name, tagline, url, darkColor, accentColor, logo, showHeadline, showLogo, showUrl } = inputs;
+  const { name, tagline, url, darkColor, accentColor, logo, logoOpacity, showHeadline, showLogo, showUrl } = inputs;
   const nameText = (name || "YOUR NEWSLETTER").toUpperCase();
   const tagText = tagline || "A short tagline about what you write";
   if (style === "diagonal") {
@@ -476,7 +478,7 @@ function drawProfileBanner(ctx, inputs, style) {
     const tagFit = fitText(ctx, tagText, 480, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.6)";
     tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 210 + i * tagFit.lineHeight));
     if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36); }
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 170, H - 170, 110, accentColor);
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 170, H - 170, 110, accentColor, logoOpacity);
   } else if (style === "bar") {
     ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 6);
     if (showHeadline) { fitSingleLine(ctx, nameText, 800, 54, 26, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 140); }
@@ -484,19 +486,19 @@ function drawProfileBanner(ctx, inputs, style) {
     const tagFit = fitText(ctx, tagText, 600, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.55)";
     tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 200 + i * tagFit.lineHeight));
     if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36); }
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 140, (H - 80) / 2, 80, accentColor);
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 140, (H - 80) / 2, 80, accentColor, logoOpacity);
   } else {
     ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H);
     if (showHeadline) { fitSingleLine(ctx, nameText, 900, 60, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.fillText(nameText, W / 2, 160); }
     fitSingleLine(ctx, tagText, 800, 20, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.textAlign = "center"; ctx.fillText(tagText, W / 2, 210);
     if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36); }
-    ctx.textAlign = "start"; if (showLogo) drawLogoOrInitials(ctx, logo, name, (W - 60) / 2, 250, 60, darkColor);
+    ctx.textAlign = "start"; if (showLogo) drawLogoOrInitials(ctx, logo, name, (W - 60) / 2, 250, 60, darkColor, logoOpacity);
   }
 }
 
 function drawEmailBanner(ctx, inputs, style) {
   const W = 1100, H = 220;
-  const { name, tagline, darkColor, accentColor, logo, showHeadline, showLogo, showUrl } = inputs;
+  const { name, tagline, darkColor, accentColor, logo, logoOpacity, showHeadline, showLogo, showUrl } = inputs;
   const nameText = (name || "YOUR NEWSLETTER").toUpperCase();
   const tagText = tagline || "Your tagline goes here";
   if (style === "diagonal") {
@@ -505,7 +507,7 @@ function drawEmailBanner(ctx, inputs, style) {
     ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W*0.75, 4);
     if (showHeadline) { fitSingleLine(ctx, nameText, 700, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42); }
     fitSingleLine(ctx, tagText.toUpperCase(), 700, 16, 11, "400"); ctx.fillStyle = accentColor; ctx.textBaseline = "middle"; ctx.fillText(tagText.toUpperCase(), 40, H * 0.68); ctx.textBaseline = "alphabetic";
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 130, (H - 80) / 2, 80, accentColor);
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 130, (H - 80) / 2, 80, accentColor, logoOpacity);
   } else if (style === "bar") {
     ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 5); ctx.fillRect(0, H - 5, W, 5);
     if (showHeadline) { fitSingleLine(ctx, nameText, 800, 44, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(nameText, W / 2, H * 0.4); }
@@ -515,13 +517,13 @@ function drawEmailBanner(ctx, inputs, style) {
     ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H);
     if (showHeadline) { fitSingleLine(ctx, nameText, 750, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42); }
     fitSingleLine(ctx, tagText, 750, 16, 11, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.textBaseline = "middle"; ctx.fillText(tagText, 40, H * 0.68); ctx.textBaseline = "alphabetic";
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 120, (H - 70) / 2, 70, darkColor);
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 120, (H - 70) / 2, 70, darkColor, logoOpacity);
   }
 }
 
 function drawWordmark(ctx, inputs, style) {
   const W = 1344, H = 256;
-  const { name, accentColor, darkColor, logo, showHeadline, showLogo } = inputs;
+  const { name, accentColor, darkColor, logo, logoOpacity, showHeadline, showLogo } = inputs;
   ctx.clearRect(0, 0, W, H);
   const displayName = (name || "YOUR NEWSLETTER").toUpperCase();
   const logoSize = 140, gap = 28, logoX = 48, logoY = (H - logoSize) / 2;
@@ -529,14 +531,14 @@ function drawWordmark(ctx, inputs, style) {
   if (style === "diagonal") {
     ctx.save(); ctx.fillStyle = accentColor; ctx.globalAlpha = 0.15;
     ctx.beginPath(); ctx.moveTo(100, 0); ctx.lineTo(180, 0); ctx.lineTo(80, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill(); ctx.restore();
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor, logoOpacity);
     if (showHeadline) { fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic"; }
   } else if (style === "bar") {
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor, logoOpacity);
     if (showHeadline) { const size = fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 - 6);
     ctx.fillStyle = accentColor; const tW = ctx.measureText(displayName).width; ctx.fillRect(textX, H / 2 + size * 0.42, Math.min(tW, maxTextW), 6); ctx.textBaseline = "alphabetic"; }
   } else {
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor, logoOpacity);
     if (showHeadline) { fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = accentColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic"; }
   }
 }
@@ -879,6 +881,10 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
                 </label>
               )}
               <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>No logo? Initials are auto-generated.</div>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>Opacity: {inputs.logoOpacity}%</div>
+                <input type="range" min="0" max="100" value={inputs.logoOpacity} onChange={(e) => setInputs(prev => ({ ...prev, logoOpacity: Number(e.target.value) }))} style={{ width: "100%", accentColor: "#FF6719" }} />
+              </div>
             </div>
 
             {/* Background Image */}
