@@ -787,6 +787,8 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
     return () => window.removeEventListener("mouseup", handleUp);
   }, []);
 
+  if (!fontLoaded) return <div style={{ minHeight: "100vh", background: "#111" }} />;
+
   return (
     <div style={{ minHeight: "100vh", background: "#111", color: "#fff", fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
       {/* ═══ HEADER ═══ */}
