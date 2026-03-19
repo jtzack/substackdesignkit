@@ -352,12 +352,11 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
       const preSize = fitSingleLine(ctx, preText, 600, 20, 12, "bold");
       const barH = preSize + 16, barTop = 56;
       barBottom = barTop + barH + 3;
-      const diagAtTop = diagBot + (diagTop - diagBot) * (H - barTop) / H;
-      const diagAtBot = diagBot + (diagTop - diagBot) * (H - barBottom) / H;
-      const barW1 = diagAtTop - 106, barW2 = diagAtBot - 106;
-      ctx.fillStyle = accentColor; ctx.fillRect(106, barTop, barW1, barH); ctx.fillRect(106, barTop - 5, barW1, 2); ctx.fillRect(106, barTop + barH + 3, barW2, 2);
+      const pW = ctx.measureText(preText).width;
+      const barW = pW + 40;
+      ctx.fillStyle = accentColor; ctx.fillRect(106, barTop, barW, barH); ctx.fillRect(106, barTop - 5, barW, 2); ctx.fillRect(106, barTop + barH + 3, barW, 2);
       ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(preText, 126, barTop + barH / 2); ctx.textBaseline = "alphabetic";
-      hb.prehead = { x: 106 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: barW1, h: barH + 10 };
+      hb.prehead = { x: 106 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: barW, h: barH + 10 };
       ctx.restore();
     }
     if (showHeadline) {
