@@ -56,7 +56,6 @@ const PALETTES = [
 ];
 
 const DEFAULT_OFFSETS = { prehead: { dx: 0, dy: 0 }, headline: { dx: 0, dy: 0 }, logo: { dx: 0, dy: 0 }, url: { dx: 0, dy: 0 } };
-const DEFAULT_SCALES = { prehead: 1.0, headline: 1.0 };
 
 const DEFAULT_INPUTS = {
   name: "", headline: "", prehead: "", category: "", tagline: "", url: "",
@@ -330,7 +329,7 @@ function drawBgCover(ctx, img, W, H, overlayOpacity) {
    DESIGN KIT DRAWING FUNCTIONS
    ═══════════════════════════════════════════ */
 
-function drawPostHeader(ctx, inputs, style, offsets, hitBoxes, scales) {
+function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
   const W = 1200, H = 630;
   const { name, headline, prehead, url, darkColor, accentColor, logo, bgImage, overlayOpacity, logoOpacity, showPrehead, showHeadline, showLogo, showUrl } = inputs;
   const headText = (headline || "INSERT YOUR HEADLINE").toUpperCase();
@@ -338,7 +337,6 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes, scales) {
   const hasBg = !!bgImage;
   const off = offsets || DEFAULT_OFFSETS;
   const hb = hitBoxes || {};
-  const sc = scales || DEFAULT_SCALES;
 
   if (style === "diagonal") {
     if (hasBg) { drawBgCover(ctx, bgImage, W, H, overlayOpacity); }
@@ -351,42 +349,27 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes, scales) {
     let barBottom = 56;
     if (showPrehead) {
       ctx.save(); ctx.translate(off.prehead.dx, off.prehead.dy);
-      const pScale = Math.max(0.5, Math.min(2.0, sc.prehead));
-      const preSize = fitSingleLine(ctx, preText, 600 * pScale, Math.round(20 * pScale), Math.round(12 * pScale), "bold");
-      const barH = preSize + Math.round(16 * pScale), barTop = 56;
+      const preSize = fitSingleLine(ctx, preText, 600, 20, 12, "bold");
+      const barH = preSize + 16, barTop = 56;
       barBottom = barTop + barH + 3;
       const diagAtTop = diagBot + (diagTop - diagBot) * (H - barTop) / H;
       const diagAtBot = diagBot + (diagTop - diagBot) * (H - barBottom) / H;
       const barW1 = diagAtTop - 106, barW2 = diagAtBot - 106;
       ctx.fillStyle = accentColor; ctx.fillRect(106, barTop, barW1, barH); ctx.fillRect(106, barTop - 5, barW1, 2); ctx.fillRect(106, barTop + barH + 3, barW2, 2);
       ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(preText, 126, barTop + barH / 2); ctx.textBaseline = "alphabetic";
-      // Resize handle at bottom-right corner
-      const handleSize = 14;
-      ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(106 + barW2 - handleSize, barTop + barH + 3 - handleSize + 2, handleSize, handleSize);
-      ctx.strokeStyle = darkColor; ctx.lineWidth = 1; ctx.strokeRect(106 + barW2 - handleSize, barTop + barH + 3 - handleSize + 2, handleSize, handleSize);
       hb.prehead = { x: 106 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: barW1, h: barH + 10 };
-      hb.preheadResize = { x: 106 + barW2 - handleSize + off.prehead.dx, y: barTop + barH + 3 - handleSize + 2 + off.prehead.dy, w: handleSize, h: handleSize };
       ctx.restore();
     }
     if (showHeadline) {
       ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
-      const hScale = Math.max(0.4, Math.min(2.5, sc.headline));
-      const maxFont = Math.round(68 * hScale), minFont = Math.round(32 * hScale);
-      const maxW = Math.round(520 * hScale);
-      const fit = fitText(ctx, headText, maxW, 3, maxFont, minFont, "bold");
+      const fit = fitText(ctx, headText, 520, 3, 68, 32, "bold");
       const zT = showPrehead ? barBottom + 40 : 56, zB = H - 70;
       const bH = fit.lines.length * fit.lineHeight;
       const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
       ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
       fit.lines.forEach((l, i) => ctx.fillText(l, 106, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic";
-      // Resize handle at bottom-right corner
-      const handleSize = 14;
-      const hbX = 106, hbY = fY - fit.lineHeight / 2, hbW = maxW, hbH = bH;
-      ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(hbX + hbW - handleSize, hbY + hbH - handleSize, handleSize, handleSize);
-      ctx.strokeStyle = darkColor; ctx.lineWidth = 1; ctx.strokeRect(hbX + hbW - handleSize, hbY + hbH - handleSize, handleSize, handleSize);
-      hb.headline = { x: hbX + off.headline.dx, y: hbY + off.headline.dy, w: hbW, h: hbH };
-      hb.headlineResize = { x: hbX + hbW - handleSize + off.headline.dx, y: hbY + hbH - handleSize + off.headline.dy, w: handleSize, h: handleSize };
+      hb.headline = { x: 106 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 520, h: bH };
       ctx.restore();
     }
     if (showUrl) {
@@ -629,7 +612,6 @@ function App() {
   const [bgPreview, setBgPreview] = useState(null);
   const canvasRefs = useRef({});
   const [elemOffsets, setElemOffsets] = useState(JSON.parse(JSON.stringify(DEFAULT_OFFSETS)));
-  const [elemScales, setElemScales] = useState({ ...DEFAULT_SCALES });
   const hitBoxesRef = useRef({});
   const dragRef = useRef(null);
 
@@ -669,12 +651,12 @@ function App() {
       if (t.id === "wordmark") ctx.clearRect(0, 0, t.width, t.height);
       else { ctx.fillStyle = inputs.darkColor; ctx.fillRect(0, 0, t.width, t.height); }
       if (t.id === "postHeader") {
-        drawPostHeader(ctx, inputs, kitStyle, elemOffsets, hitBoxesRef.current, elemScales);
+        drawPostHeader(ctx, inputs, kitStyle, elemOffsets, hitBoxesRef.current);
       } else {
         DRAW_FNS[t.id](ctx, inputs, kitStyle);
       }
     }
-  }, [inputs, kitStyle, fontLoaded, elemOffsets, elemScales]);
+  }, [inputs, kitStyle, fontLoaded, elemOffsets]);
 
   useEffect(() => { if (tab === "templates") redraw(); }, [redraw, tab]);
 
@@ -748,8 +730,8 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
     } catch (e) {}
   };
 
-  const resetAll = () => { setInputs({ ...DEFAULT_INPUTS }); setLogoPreview(null); setBgPreview(null); setElemOffsets(JSON.parse(JSON.stringify(DEFAULT_OFFSETS))); setElemScales({ ...DEFAULT_SCALES }); };
-  const resetPositions = () => { setElemOffsets(JSON.parse(JSON.stringify(DEFAULT_OFFSETS))); setElemScales({ ...DEFAULT_SCALES }); };
+  const resetAll = () => { setInputs({ ...DEFAULT_INPUTS }); setLogoPreview(null); setBgPreview(null); setElemOffsets(JSON.parse(JSON.stringify(DEFAULT_OFFSETS))); };
+  const resetPositions = () => setElemOffsets(JSON.parse(JSON.stringify(DEFAULT_OFFSETS)));
 
   const canvasToReal = (e) => {
     const canvas = canvasRefs.current.postHeader; if (!canvas) return null;
@@ -760,11 +742,6 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
 
   const hitTest = (pt) => {
     const hb = hitBoxesRef.current;
-    // Check resize handles first (they overlap the element hitboxes)
-    for (const key of ["preheadResize", "headlineResize"]) {
-      const b = hb[key]; if (!b) continue;
-      if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) return key;
-    }
     for (const key of ["prehead", "headline", "logo", "url"]) {
       const b = hb[key]; if (!b) continue;
       if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) return key;
@@ -776,13 +753,7 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
     const pt = canvasToReal(e); if (!pt) return;
     const elem = hitTest(pt);
     if (elem) {
-      if (elem === "preheadResize") {
-        dragRef.current = { elem, mode: "resize", scaleKey: "prehead", startX: pt.x, startY: pt.y, origScale: elemScales.prehead };
-      } else if (elem === "headlineResize") {
-        dragRef.current = { elem, mode: "resize", scaleKey: "headline", startX: pt.x, startY: pt.y, origScale: elemScales.headline };
-      } else {
-        dragRef.current = { elem, mode: "drag", startX: pt.x, startY: pt.y, origDx: elemOffsets[elem].dx, origDy: elemOffsets[elem].dy };
-      }
+      dragRef.current = { elem, startX: pt.x, startY: pt.y, origDx: elemOffsets[elem].dx, origDy: elemOffsets[elem].dy };
       e.preventDefault();
     }
   };
@@ -791,20 +762,11 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
     const canvas = canvasRefs.current.postHeader; if (!canvas) return;
     const pt = canvasToReal(e); if (!pt) return;
     if (dragRef.current) {
-      const d = dragRef.current;
-      if (d.mode === "resize") {
-        canvas.style.cursor = "nwse-resize";
-        // Scale based on combined horizontal + vertical drag distance
-        const delta = ((pt.x - d.startX) + (pt.y - d.startY)) / 200;
-        const newScale = Math.max(0.4, Math.min(2.5, d.origScale + delta));
-        setElemScales(prev => ({ ...prev, [d.scaleKey]: newScale }));
-      } else {
-        canvas.style.cursor = "grabbing";
-        setElemOffsets(prev => ({ ...prev, [d.elem]: { dx: d.origDx + (pt.x - d.startX), dy: d.origDy + (pt.y - d.startY) } }));
-      }
+      const { elem, startX, startY, origDx, origDy } = dragRef.current;
+      canvas.style.cursor = "grabbing";
+      setElemOffsets(prev => ({ ...prev, [elem]: { dx: origDx + (pt.x - startX), dy: origDy + (pt.y - startY) } }));
     } else {
-      const hover = hitTest(pt);
-      canvas.style.cursor = hover === "preheadResize" || hover === "headlineResize" ? "nwse-resize" : hover ? "grab" : "default";
+      canvas.style.cursor = hitTest(pt) ? "grab" : "default";
     }
   };
 
@@ -996,7 +958,7 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
                     onMouseUp={t.id === "postHeader" ? onCanvasMouseUp : undefined}
                     style={{ width: "100%", height: "auto", display: "block", borderRadius: 4 }} />
                 </div>
-                {t.id === "postHeader" && <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>Drag elements to reposition. Drag the corner handle on prehead or headline to resize.</div>}
+                {t.id === "postHeader" && <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>Drag elements to reposition them on the canvas.</div>}
               </div>
             ))}
           </div>
