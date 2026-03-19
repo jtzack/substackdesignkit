@@ -292,11 +292,17 @@ function drawLogo(ctx, img, x, y, size) {
   ctx.drawImage(img, x + (size - dw) / 2, y + (size - dh) / 2, dw, dh);
 }
 
+function luminance(hex) {
+  const c = hex.replace("#","");
+  const r = parseInt(c.substr(0,2),16)/255, g = parseInt(c.substr(2,2),16)/255, b = parseInt(c.substr(4,2),16)/255;
+  const toL = v => v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+  return 0.2126*toL(r) + 0.7152*toL(g) + 0.0722*toL(b);
+}
 function drawInitials(ctx, name, x, y, size, accentColor) {
   const initials = name.split(" ").map(w => w[0] || "").join("").substring(0, 2).toUpperCase() || "YN";
-  ctx.fillStyle = "#1a1a1a";
-  ctx.beginPath(); ctx.roundRect(x, y, size, size, 6); ctx.fill();
   ctx.fillStyle = accentColor;
+  ctx.beginPath(); ctx.roundRect(x, y, size, size, 6); ctx.fill();
+  ctx.fillStyle = luminance(accentColor) > 0.35 ? "#1a1a1a" : "#FFFFFF";
   ctx.font = `bold ${size * 0.4}px 'Oswald', sans-serif`;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText(initials, x + size / 2, y + size / 2);
