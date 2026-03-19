@@ -359,11 +359,12 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
     }
     if (showHeadline) {
       ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
-      const fit = fitText(ctx, headText, 520, 3, 68, 32, "italic bold");
+      const fit = fitText(ctx, headText, 520, 3, 68, 32, "bold");
       const zT = showPrehead ? barBottom + 40 : 56, zB = H - 70;
       const bH = fit.lines.length * fit.lineHeight;
       const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
       ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
+      ctx.transform(1, 0, -0.18, 1, 0, 0);
       fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic";
       hb.headline = { x: 56 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 520, h: bH };
@@ -474,7 +475,7 @@ function drawProfileBanner(ctx, inputs, style) {
     ctx.fillStyle = accentColor; ctx.font = "bold 16px 'Oswald', sans-serif";
     const catText = (inputs.category || "YOUR CATEGORY").toUpperCase(), cW = ctx.measureText(catText).width;
     ctx.fillRect(56, 60, cW + 32, 30); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(catText, 72, 75); ctx.textBaseline = "alphabetic";
-    if (showHeadline) { fitSingleLine(ctx, nameText, 500, 58, 28, "italic bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 170); }
+    if (showHeadline) { fitSingleLine(ctx, nameText, 500, 58, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.save(); ctx.transform(1, 0, -0.18, 1, 0, 0); ctx.fillText(nameText, 56, 170); ctx.restore(); }
     const tagFit = fitText(ctx, tagText, 480, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.6)";
     tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 210 + i * tagFit.lineHeight));
     if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36); }
@@ -629,26 +630,16 @@ function App() {
   useEffect(() => {
     const loadFonts = async () => {
       const weights = [
-        ["400", "normal", "TK3_WkUHHAIjg75cFRf3bXL8LICs1xFvsUZiYQ0.woff2"],
-        ["700", "normal", "TK3_WkUHHAIjg75cFRf3bXL8LICs1-FvsUZiYQ0.woff2"],
+        ["400", "TK3_WkUHHAIjg75cFRf3bXL8LICs1xFvsUZiYQ0.woff2"],
+        ["700", "TK3_WkUHHAIjg75cFRf3bXL8LICs1-FvsUZiYQ0.woff2"],
       ];
-      for (const [weight, style, file] of weights) {
+      for (const [weight, file] of weights) {
         try {
-          const f = new FontFace("Oswald", `url(https://fonts.gstatic.com/s/oswald/v53/${file})`, { weight, style });
+          const f = new FontFace("Oswald", `url(https://fonts.gstatic.com/s/oswald/v53/${file})`, { weight });
           document.fonts.add(await f.load());
         } catch (e) {}
       }
-      // Wait for ALL fonts including italic variants from CSS <link> to be ready
-      const needed = ["400 48px Oswald", "bold 48px Oswald", "italic 48px Oswald", "italic bold 48px Oswald"];
-      const waitForAll = () => new Promise(resolve => {
-        const check = () => {
-          if (needed.every(f => document.fonts.check(f))) return resolve();
-          requestAnimationFrame(check);
-        };
-        check();
-      });
       await document.fonts.ready;
-      await waitForAll();
       setFontLoaded(true);
     };
     loadFonts();
