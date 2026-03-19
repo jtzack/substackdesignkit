@@ -343,7 +343,7 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
     else {
       ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = accentColor;
-      ctx.beginPath(); ctx.moveTo(W*0.58, 0); ctx.lineTo(W, 0); ctx.lineTo(W, H); ctx.lineTo(W*0.42, H); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(W*0.58 + 100, 0); ctx.lineTo(W, 0); ctx.lineTo(W, H); ctx.lineTo(W*0.42 + 100, H); ctx.closePath(); ctx.fill();
       ctx.save(); ctx.fillStyle = accentColor; ctx.transform(1, 0, -0.4, 1, 0, 0); ctx.fillRect(780, 22, 80, 5); ctx.restore();
     }
     let barBottom = 56;
