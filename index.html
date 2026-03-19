@@ -344,17 +344,20 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
       ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = accentColor;
       ctx.beginPath(); ctx.moveTo(W*0.58 + 100, 0); ctx.lineTo(W, 0); ctx.lineTo(W, H); ctx.lineTo(W*0.42 + 100, H); ctx.closePath(); ctx.fill();
-      ctx.save(); ctx.fillStyle = accentColor; ctx.transform(1, 0, -0.4, 1, 0, 0); ctx.fillRect(780, 22, 80, 5); ctx.restore();
     }
+    const diagTop = W*0.58 + 100, diagBot = W*0.42 + 100;
     let barBottom = 56;
     if (showPrehead) {
       ctx.save(); ctx.translate(off.prehead.dx, off.prehead.dy);
       const preSize = fitSingleLine(ctx, preText, 600, 20, 12, "bold");
       const barH = preSize + 16, barTop = 56;
       barBottom = barTop + barH + 3;
-      ctx.fillStyle = accentColor; ctx.fillRect(106, barTop, 660, barH); ctx.fillRect(106, barTop - 5, 660, 2); ctx.fillRect(106, barTop + barH + 3, 660, 2);
+      const diagAtTop = diagBot + (diagTop - diagBot) * (H - barTop) / H;
+      const diagAtBot = diagBot + (diagTop - diagBot) * (H - barBottom) / H;
+      const barW1 = diagAtTop - 106, barW2 = diagAtBot - 106;
+      ctx.fillStyle = accentColor; ctx.fillRect(106, barTop, barW1, barH); ctx.fillRect(106, barTop - 5, barW1, 2); ctx.fillRect(106, barTop + barH + 3, barW2, 2);
       ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(preText, 126, barTop + barH / 2); ctx.textBaseline = "alphabetic";
-      hb.prehead = { x: 106 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: 660, h: barH + 10 };
+      hb.prehead = { x: 106 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: barW1, h: barH + 10 };
       ctx.restore();
     }
     if (showHeadline) {
