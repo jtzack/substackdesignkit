@@ -364,8 +364,8 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
       const bH = fit.lines.length * fit.lineHeight;
       const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
       ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
-      ctx.transform(1, 0, -0.18, 1, 0, 0);
-      fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
+      const skew = -0.18;
+      fit.lines.forEach((l, i) => { const ly = fY + i * fit.lineHeight; ctx.save(); ctx.transform(1, 0, skew, 1, -skew * ly, 0); ctx.fillText(l, 56, ly); ctx.restore(); });
       ctx.textBaseline = "alphabetic";
       hb.headline = { x: 56 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 520, h: bH };
       ctx.restore();
@@ -475,7 +475,7 @@ function drawProfileBanner(ctx, inputs, style) {
     ctx.fillStyle = accentColor; ctx.font = "bold 16px 'Oswald', sans-serif";
     const catText = (inputs.category || "YOUR CATEGORY").toUpperCase(), cW = ctx.measureText(catText).width;
     ctx.fillRect(56, 60, cW + 32, 30); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(catText, 72, 75); ctx.textBaseline = "alphabetic";
-    if (showHeadline) { fitSingleLine(ctx, nameText, 500, 58, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.save(); ctx.transform(1, 0, -0.18, 1, 0, 0); ctx.fillText(nameText, 56, 170); ctx.restore(); }
+    if (showHeadline) { fitSingleLine(ctx, nameText, 500, 58, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.save(); ctx.transform(1, 0, -0.18, 1, -0.18 * 170, 0); ctx.fillText(nameText, 56, 170); ctx.restore(); }
     const tagFit = fitText(ctx, tagText, 480, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.6)";
     tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 210 + i * tagFit.lineHeight));
     if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36); }
