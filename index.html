@@ -55,6 +55,8 @@ const PALETTES = [
   { label: "Mono", dark: "#111111", accent: "#FFFFFF" },
 ];
 
+const DEFAULT_OFFSETS = { prehead: { dx: 0, dy: 0 }, headline: { dx: 0, dy: 0 }, logo: { dx: 0, dy: 0 }, url: { dx: 0, dy: 0 } };
+
 const DEFAULT_INPUTS = {
   name: "", headline: "", prehead: "", category: "", tagline: "", url: "",
   darkColor: "#333333", accentColor: "#FF6719",
@@ -319,12 +321,14 @@ function drawBgCover(ctx, img, W, H, overlayOpacity) {
    DESIGN KIT DRAWING FUNCTIONS
    ═══════════════════════════════════════════ */
 
-function drawPostHeader(ctx, inputs, style) {
+function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
   const W = 1200, H = 630;
   const { name, headline, prehead, url, darkColor, accentColor, logo, bgImage, overlayOpacity, showPrehead, showHeadline, showLogo, showUrl } = inputs;
   const headText = (headline || "INSERT YOUR HEADLINE").toUpperCase();
   const preText = (prehead || "INSERT YOUR PREHEAD").toUpperCase();
   const hasBg = !!bgImage;
+  const off = offsets || DEFAULT_OFFSETS;
+  const hb = hitBoxes || {};
 
   if (style === "diagonal") {
     if (hasBg) { drawBgCover(ctx, bgImage, W, H, overlayOpacity); }
@@ -336,13 +340,17 @@ function drawPostHeader(ctx, inputs, style) {
     }
     let barBottom = 56;
     if (showPrehead) {
+      ctx.save(); ctx.translate(off.prehead.dx, off.prehead.dy);
       const preSize = fitSingleLine(ctx, preText, 600, 20, 12, "bold");
       const barH = preSize + 16, barTop = 56;
       barBottom = barTop + barH + 3;
       ctx.fillStyle = accentColor; ctx.fillRect(56, barTop, 660, barH); ctx.fillRect(56, barTop - 5, 660, 2); ctx.fillRect(56, barTop + barH + 3, 660, 2);
       ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(preText, 76, barTop + barH / 2); ctx.textBaseline = "alphabetic";
+      hb.prehead = { x: 56 + off.prehead.dx, y: (barTop - 5) + off.prehead.dy, w: 660, h: barH + 10 };
+      ctx.restore();
     }
     if (showHeadline) {
+      ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
       const fit = fitText(ctx, headText, 520, 3, 68, 32, "italic bold");
       const zT = showPrehead ? barBottom + 40 : 56, zB = H - 70;
       const bH = fit.lines.length * fit.lineHeight;
@@ -350,16 +358,36 @@ function drawPostHeader(ctx, inputs, style) {
       ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
       fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic";
+      hb.headline = { x: 56 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 520, h: bH };
+      ctx.restore();
     }
-    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40); }
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 190, H - 200, 120, accentColor);
+    if (showUrl) {
+      ctx.save(); ctx.translate(off.url.dx, off.url.dy);
+      ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40);
+      const uW = ctx.measureText(url || "yourstack.substack.com").width;
+      hb.url = { x: 56 + off.url.dx, y: H - 56 + off.url.dy, w: uW, h: 24 };
+      ctx.restore();
+    }
+    if (showLogo) {
+      ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
+      drawLogoOrInitials(ctx, logo, name, W - 190, H - 200, 120, accentColor);
+      hb.logo = { x: W - 190 + off.logo.dx, y: H - 200 + off.logo.dy, w: 120, h: 120 };
+      ctx.restore();
+    }
 
   } else if (style === "bar") {
     if (hasBg) drawBgCover(ctx, bgImage, W, H, overlayOpacity);
     else { ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); }
     ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 8); ctx.fillRect(56, H - 80, 300, 4);
-    if (showPrehead) { fitSingleLine(ctx, preText, 700, 18, 12, "bold"); ctx.fillStyle = accentColor; ctx.fillText(preText, 56, 90); }
+    if (showPrehead) {
+      ctx.save(); ctx.translate(off.prehead.dx, off.prehead.dy);
+      fitSingleLine(ctx, preText, 700, 18, 12, "bold"); ctx.fillStyle = accentColor; ctx.fillText(preText, 56, 90);
+      const pW = ctx.measureText(preText).width;
+      hb.prehead = { x: 56 + off.prehead.dx, y: 72 + off.prehead.dy, w: pW, h: 24 };
+      ctx.restore();
+    }
     if (showHeadline) {
+      ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
       const fit = fitText(ctx, headText, 800, 3, 72, 34, "bold");
       const zT = showPrehead ? 120 : 60, zB = H - 70;
       const bH = fit.lines.length * fit.lineHeight;
@@ -367,22 +395,39 @@ function drawPostHeader(ctx, inputs, style) {
       ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
       fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic";
+      hb.headline = { x: 56 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 800, h: bH };
+      ctx.restore();
     }
-    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40); }
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 140, 40, 90, accentColor);
+    if (showUrl) {
+      ctx.save(); ctx.translate(off.url.dx, off.url.dy);
+      ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40);
+      const uW = ctx.measureText(url || "yourstack.substack.com").width;
+      hb.url = { x: 56 + off.url.dx, y: H - 56 + off.url.dy, w: uW, h: 24 };
+      ctx.restore();
+    }
+    if (showLogo) {
+      ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
+      drawLogoOrInitials(ctx, logo, name, W - 140, 40, 90, accentColor);
+      hb.logo = { x: W - 140 + off.logo.dx, y: 40 + off.logo.dy, w: 90, h: 90 };
+      ctx.restore();
+    }
 
   } else {
     if (hasBg) drawBgCover(ctx, bgImage, W, H, overlayOpacity);
     else { ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H); }
     if (showPrehead) {
+      ctx.save(); ctx.translate(off.prehead.dx, off.prehead.dy);
       fitSingleLine(ctx, preText, 700, 20, 12, "bold");
       ctx.fillStyle = darkColor; const pW = ctx.measureText(preText).width;
       ctx.fillRect((W - pW) / 2 - 20, 140, pW + 40, 36);
       ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText(preText, W / 2, 158);
       ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+      hb.prehead = { x: (W - pW) / 2 - 20 + off.prehead.dx, y: 140 + off.prehead.dy, w: pW + 40, h: 36 };
+      ctx.restore();
     }
     if (showHeadline) {
+      ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
       const fit = fitText(ctx, headText, 900, 3, 76, 34, "bold");
       ctx.fillStyle = "#FFFFFF";
       const bH = fit.lines.length * fit.lineHeight;
@@ -391,9 +436,22 @@ function drawPostHeader(ctx, inputs, style) {
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       fit.lines.forEach((l, i) => ctx.fillText(l, W / 2, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic"; ctx.textAlign = "start";
+      hb.headline = { x: (W - 900) / 2 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 900, h: bH };
+      ctx.restore();
     }
-    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.textAlign = "center"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36); ctx.textAlign = "start"; }
-    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 130, H - 110, 70, darkColor);
+    if (showUrl) {
+      ctx.save(); ctx.translate(off.url.dx, off.url.dy);
+      ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.textAlign = "center"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36); ctx.textAlign = "start";
+      const uW = ctx.measureText(url || "yourstack.substack.com").width;
+      hb.url = { x: (W - uW) / 2 + off.url.dx, y: H - 52 + off.url.dy, w: uW, h: 24 };
+      ctx.restore();
+    }
+    if (showLogo) {
+      ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
+      drawLogoOrInitials(ctx, logo, name, W - 130, H - 110, 70, darkColor);
+      hb.logo = { x: W - 130 + off.logo.dx, y: H - 110 + off.logo.dy, w: 70, h: 70 };
+      ctx.restore();
+    }
   }
 }
 
@@ -546,6 +604,9 @@ function App() {
   const [logoPreview, setLogoPreview] = useState(null);
   const [bgPreview, setBgPreview] = useState(null);
   const canvasRefs = useRef({});
+  const [elemOffsets, setElemOffsets] = useState(JSON.parse(JSON.stringify(DEFAULT_OFFSETS)));
+  const hitBoxesRef = useRef({});
+  const dragRef = useRef(null);
 
   // Thumbnail generator state
   const [thumbStyle, setThumbStyle] = useState(null);
@@ -577,6 +638,7 @@ function App() {
   // Canvas redraw
   const redraw = useCallback(() => {
     if (!fontLoaded) return;
+    hitBoxesRef.current = {};
     for (const t of TEMPLATES) {
       const canvas = canvasRefs.current[t.id];
       if (!canvas) continue;
@@ -584,9 +646,13 @@ function App() {
       const ctx = canvas.getContext("2d");
       if (t.id === "wordmark") ctx.clearRect(0, 0, t.width, t.height);
       else { ctx.fillStyle = inputs.darkColor; ctx.fillRect(0, 0, t.width, t.height); }
-      DRAW_FNS[t.id](ctx, inputs, kitStyle);
+      if (t.id === "postHeader") {
+        drawPostHeader(ctx, inputs, kitStyle, elemOffsets, hitBoxesRef.current);
+      } else {
+        DRAW_FNS[t.id](ctx, inputs, kitStyle);
+      }
     }
-  }, [inputs, kitStyle, fontLoaded]);
+  }, [inputs, kitStyle, fontLoaded, elemOffsets]);
 
   useEffect(() => { if (tab === "templates") redraw(); }, [redraw, tab]);
 
@@ -660,7 +726,57 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
     } catch (e) {}
   };
 
-  const resetAll = () => { setInputs({ ...DEFAULT_INPUTS }); setLogoPreview(null); setBgPreview(null); };
+  const resetAll = () => { setInputs({ ...DEFAULT_INPUTS }); setLogoPreview(null); setBgPreview(null); setElemOffsets(JSON.parse(JSON.stringify(DEFAULT_OFFSETS))); };
+  const resetPositions = () => setElemOffsets(JSON.parse(JSON.stringify(DEFAULT_OFFSETS)));
+
+  const canvasToReal = (e) => {
+    const canvas = canvasRefs.current.postHeader; if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scale = 1200 / rect.width;
+    return { x: (e.clientX - rect.left) * scale, y: (e.clientY - rect.top) * scale };
+  };
+
+  const hitTest = (pt) => {
+    const hb = hitBoxesRef.current;
+    for (const key of ["prehead", "headline", "logo", "url"]) {
+      const b = hb[key]; if (!b) continue;
+      if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) return key;
+    }
+    return null;
+  };
+
+  const onCanvasMouseDown = (e) => {
+    const pt = canvasToReal(e); if (!pt) return;
+    const elem = hitTest(pt);
+    if (elem) {
+      dragRef.current = { elem, startX: pt.x, startY: pt.y, origDx: elemOffsets[elem].dx, origDy: elemOffsets[elem].dy };
+      e.preventDefault();
+    }
+  };
+
+  const onCanvasMouseMove = (e) => {
+    const canvas = canvasRefs.current.postHeader; if (!canvas) return;
+    const pt = canvasToReal(e); if (!pt) return;
+    if (dragRef.current) {
+      const { elem, startX, startY, origDx, origDy } = dragRef.current;
+      canvas.style.cursor = "grabbing";
+      setElemOffsets(prev => ({ ...prev, [elem]: { dx: origDx + (pt.x - startX), dy: origDy + (pt.y - startY) } }));
+    } else {
+      canvas.style.cursor = hitTest(pt) ? "grab" : "default";
+    }
+  };
+
+  const onCanvasMouseUp = () => {
+    dragRef.current = null;
+    const canvas = canvasRefs.current.postHeader;
+    if (canvas) canvas.style.cursor = "default";
+  };
+
+  useEffect(() => {
+    const handleUp = () => { dragRef.current = null; };
+    window.addEventListener("mouseup", handleUp);
+    return () => window.removeEventListener("mouseup", handleUp);
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", background: "#111", color: "#fff", fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
@@ -814,14 +930,25 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
                     <span style={{ fontWeight: 600, fontSize: 15 }}>{t.label}</span>
                     <span style={{ color: "#666", fontSize: 13, marginLeft: 10 }}>{t.desc}</span>
                   </div>
-                  <button onClick={() => download(t.id)} style={{ background: "#222", color: "#ccc", border: "1px solid #333", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                    Download PNG
-                  </button>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {t.id === "postHeader" && (
+                      <button onClick={resetPositions} style={{ background: "none", color: "#888", border: "1px solid #444", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                        Reset Positions
+                      </button>
+                    )}
+                    <button onClick={() => download(t.id)} style={{ background: "#222", color: "#ccc", border: "1px solid #333", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      Download PNG
+                    </button>
+                  </div>
                 </div>
                 <div style={{ background: t.id === "wordmark" ? "repeating-conic-gradient(#2a2a2a 0% 25%, #1a1a1a 0% 50%) 50% / 16px 16px" : "#0a0a0a", borderRadius: 8, padding: 12, border: "1px solid #222" }}>
                   <canvas ref={el => canvasRefs.current[t.id] = el} width={t.width} height={t.height}
+                    onMouseDown={t.id === "postHeader" ? onCanvasMouseDown : undefined}
+                    onMouseMove={t.id === "postHeader" ? onCanvasMouseMove : undefined}
+                    onMouseUp={t.id === "postHeader" ? onCanvasMouseUp : undefined}
                     style={{ width: "100%", height: "auto", display: "block", borderRadius: 4 }} />
                 </div>
+                {t.id === "postHeader" && <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>Drag elements to reposition them on the canvas.</div>}
               </div>
             ))}
           </div>
