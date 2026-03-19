@@ -638,6 +638,7 @@ function App() {
           document.fonts.add(await f.load());
         } catch (e) {}
       }
+      await document.fonts.ready;
       setFontLoaded(true);
     };
     loadFonts();
