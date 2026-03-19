@@ -639,6 +639,14 @@ function App() {
         } catch (e) {}
       }
       await document.fonts.ready;
+      // Prime canvas contexts so the font is usable on first draw
+      const probe = document.createElement("canvas").getContext("2d");
+      probe.font = "bold 48px 'Oswald', sans-serif";
+      probe.measureText("X");
+      probe.font = "italic bold 48px 'Oswald', sans-serif";
+      probe.measureText("X");
+      // Allow a frame for the browser to fully commit the font
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       setFontLoaded(true);
     };
     loadFonts();
