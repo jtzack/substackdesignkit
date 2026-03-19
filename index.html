@@ -399,7 +399,7 @@ function drawPostHeader(ctx, inputs, style) {
 
 function drawProfileBanner(ctx, inputs, style) {
   const W = 1200, H = 400;
-  const { name, tagline, url, darkColor, accentColor, logo } = inputs;
+  const { name, tagline, url, darkColor, accentColor, logo, showHeadline, showLogo, showUrl } = inputs;
   const nameText = (name || "YOUR NEWSLETTER").toUpperCase();
   const tagText = tagline || "A short tagline about what you write";
   if (style === "diagonal") {
@@ -408,56 +408,56 @@ function drawProfileBanner(ctx, inputs, style) {
     ctx.fillStyle = accentColor; ctx.font = "bold 16px 'Oswald', sans-serif";
     const catText = (inputs.category || "YOUR CATEGORY").toUpperCase(), cW = ctx.measureText(catText).width;
     ctx.fillRect(56, 60, cW + 32, 30); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(catText, 72, 75); ctx.textBaseline = "alphabetic";
-    fitSingleLine(ctx, nameText, 500, 58, 28, "italic bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 170);
+    if (showHeadline) { fitSingleLine(ctx, nameText, 500, 58, 28, "italic bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 170); }
     const tagFit = fitText(ctx, tagText, 480, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.6)";
     tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 210 + i * tagFit.lineHeight));
-    ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36);
-    drawLogoOrInitials(ctx, logo, name, W - 170, H - 170, 110, accentColor);
+    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36); }
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 170, H - 170, 110, accentColor);
   } else if (style === "bar") {
     ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 6);
-    fitSingleLine(ctx, nameText, 800, 54, 26, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 140);
+    if (showHeadline) { fitSingleLine(ctx, nameText, 800, 54, 26, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 140); }
     ctx.fillStyle = accentColor; ctx.fillRect(56, 156, 200, 4);
     const tagFit = fitText(ctx, tagText, 600, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.55)";
     tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 200 + i * tagFit.lineHeight));
-    ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36);
-    drawLogoOrInitials(ctx, logo, name, W - 140, (H - 80) / 2, 80, accentColor);
+    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36); }
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 140, (H - 80) / 2, 80, accentColor);
   } else {
     ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H);
-    fitSingleLine(ctx, nameText, 900, 60, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.fillText(nameText, W / 2, 160);
-    fitSingleLine(ctx, tagText, 800, 20, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillText(tagText, W / 2, 210);
-    ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36);
-    ctx.textAlign = "start"; drawLogoOrInitials(ctx, logo, name, (W - 60) / 2, 250, 60, darkColor);
+    if (showHeadline) { fitSingleLine(ctx, nameText, 900, 60, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.fillText(nameText, W / 2, 160); }
+    fitSingleLine(ctx, tagText, 800, 20, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.textAlign = "center"; ctx.fillText(tagText, W / 2, 210);
+    if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36); }
+    ctx.textAlign = "start"; if (showLogo) drawLogoOrInitials(ctx, logo, name, (W - 60) / 2, 250, 60, darkColor);
   }
 }
 
 function drawEmailBanner(ctx, inputs, style) {
   const W = 1100, H = 220;
-  const { name, tagline, darkColor, accentColor, logo } = inputs;
+  const { name, tagline, darkColor, accentColor, logo, showHeadline, showLogo, showUrl } = inputs;
   const nameText = (name || "YOUR NEWSLETTER").toUpperCase();
   const tagText = tagline || "Your tagline goes here";
   if (style === "diagonal") {
     ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = accentColor; ctx.beginPath(); ctx.moveTo(W*0.78, 0); ctx.lineTo(W, 0); ctx.lineTo(W, H); ctx.lineTo(W*0.68, H); ctx.closePath(); ctx.fill();
     ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W*0.75, 4);
-    fitSingleLine(ctx, nameText, 700, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42);
-    fitSingleLine(ctx, tagText.toUpperCase(), 700, 16, 11, "400"); ctx.fillStyle = accentColor; ctx.fillText(tagText.toUpperCase(), 40, H * 0.68); ctx.textBaseline = "alphabetic";
-    drawLogoOrInitials(ctx, logo, name, W - 130, (H - 80) / 2, 80, accentColor);
+    if (showHeadline) { fitSingleLine(ctx, nameText, 700, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42); }
+    fitSingleLine(ctx, tagText.toUpperCase(), 700, 16, 11, "400"); ctx.fillStyle = accentColor; ctx.textBaseline = "middle"; ctx.fillText(tagText.toUpperCase(), 40, H * 0.68); ctx.textBaseline = "alphabetic";
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 130, (H - 80) / 2, 80, accentColor);
   } else if (style === "bar") {
     ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 5); ctx.fillRect(0, H - 5, W, 5);
-    fitSingleLine(ctx, nameText, 800, 44, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(nameText, W / 2, H * 0.4);
-    fitSingleLine(ctx, tagText, 700, 16, 11, "400"); ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fillText(tagText, W / 2, H * 0.65);
+    if (showHeadline) { fitSingleLine(ctx, nameText, 800, 44, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(nameText, W / 2, H * 0.4); }
+    fitSingleLine(ctx, tagText, 700, 16, 11, "400"); ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tagText, W / 2, H * 0.65);
     ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
   } else {
     ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H);
-    fitSingleLine(ctx, nameText, 750, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42);
-    fitSingleLine(ctx, tagText, 750, 16, 11, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillText(tagText, 40, H * 0.68); ctx.textBaseline = "alphabetic";
-    drawLogoOrInitials(ctx, logo, name, W - 120, (H - 70) / 2, 70, darkColor);
+    if (showHeadline) { fitSingleLine(ctx, nameText, 750, 48, 22, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle"; ctx.fillText(nameText, 40, H * 0.42); }
+    fitSingleLine(ctx, tagText, 750, 16, 11, "400"); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.textBaseline = "middle"; ctx.fillText(tagText, 40, H * 0.68); ctx.textBaseline = "alphabetic";
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, W - 120, (H - 70) / 2, 70, darkColor);
   }
 }
 
 function drawWordmark(ctx, inputs, style) {
   const W = 1344, H = 256;
-  const { name, accentColor, darkColor, logo } = inputs;
+  const { name, accentColor, darkColor, logo, showHeadline, showLogo } = inputs;
   ctx.clearRect(0, 0, W, H);
   const displayName = (name || "YOUR NEWSLETTER").toUpperCase();
   const logoSize = 140, gap = 28, logoX = 48, logoY = (H - logoSize) / 2;
@@ -465,15 +465,15 @@ function drawWordmark(ctx, inputs, style) {
   if (style === "diagonal") {
     ctx.save(); ctx.fillStyle = accentColor; ctx.globalAlpha = 0.15;
     ctx.beginPath(); ctx.moveTo(100, 0); ctx.lineTo(180, 0); ctx.lineTo(80, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill(); ctx.restore();
-    drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
-    fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic";
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    if (showHeadline) { fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic"; }
   } else if (style === "bar") {
-    drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
-    const size = fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 - 6);
-    ctx.fillStyle = accentColor; const tW = ctx.measureText(displayName).width; ctx.fillRect(textX, H / 2 + size * 0.42, Math.min(tW, maxTextW), 6); ctx.textBaseline = "alphabetic";
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    if (showHeadline) { const size = fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 - 6);
+    ctx.fillStyle = accentColor; const tW = ctx.measureText(displayName).width; ctx.fillRect(textX, H / 2 + size * 0.42, Math.min(tW, maxTextW), 6); ctx.textBaseline = "alphabetic"; }
   } else {
-    drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
-    fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = accentColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic";
+    if (showLogo) drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor);
+    if (showHeadline) { fitSingleLine(ctx, displayName, maxTextW, 88, 32, "bold"); ctx.fillStyle = accentColor; ctx.textBaseline = "middle"; ctx.fillText(displayName, textX, H / 2 + 2); ctx.textBaseline = "alphabetic"; }
   }
 }
 
@@ -782,7 +782,7 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
 
             {/* Toggles */}
             <div>
-              <label style={labelStyle}>Post Header Elements</label>
+              <label style={labelStyle}>Template Elements</label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[["showPrehead", "Prehead"], ["showHeadline", "Headline"], ["showLogo", "Logo"], ["showUrl", "URL"]].map(([key, label]) => (
                   <Toggle key={key} on={inputs[key]} onToggle={() => setInputs(prev => ({ ...prev, [key]: !prev[key] }))} label={label} />
