@@ -359,7 +359,7 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
     }
     if (showHeadline) {
       ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
-      const fit = fitText(ctx, headText, 520, 3, 68, 32, "italic bold");
+      const fit = fitText(ctx, headText, 520, 3, 68, 32, "bold");
       const zT = showPrehead ? barBottom + 40 : 56, zB = H - 70;
       const bH = fit.lines.length * fit.lineHeight;
       const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
@@ -474,7 +474,7 @@ function drawProfileBanner(ctx, inputs, style) {
     ctx.fillStyle = accentColor; ctx.font = "bold 16px 'Oswald', sans-serif";
     const catText = (inputs.category || "YOUR CATEGORY").toUpperCase(), cW = ctx.measureText(catText).width;
     ctx.fillRect(56, 60, cW + 32, 30); ctx.fillStyle = darkColor; ctx.textBaseline = "middle"; ctx.fillText(catText, 72, 75); ctx.textBaseline = "alphabetic";
-    if (showHeadline) { fitSingleLine(ctx, nameText, 500, 58, 28, "italic bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 170); }
+    if (showHeadline) { fitSingleLine(ctx, nameText, 500, 58, 28, "bold"); ctx.fillStyle = "#FFFFFF"; ctx.fillText(nameText, 56, 170); }
     const tagFit = fitText(ctx, tagText, 480, 2, 19, 14, "400"); ctx.fillStyle = "rgba(255,255,255,0.6)";
     tagFit.lines.forEach((l, i) => ctx.fillText(l, 56, 210 + i * tagFit.lineHeight));
     if (showUrl) { ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 16px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 36); }
@@ -628,12 +628,9 @@ function App() {
   // Font loading
   useEffect(() => {
     const loadFonts = async () => {
-      // Force-load every Oswald variant we use (including italic from CSS <link>)
       await Promise.all([
         document.fonts.load("400 48px 'Oswald'"),
         document.fonts.load("700 48px 'Oswald'"),
-        document.fonts.load("italic 400 48px 'Oswald'"),
-        document.fonts.load("italic 700 48px 'Oswald'"),
         document.fonts.load("400 48px 'Inter'"),
         document.fonts.load("700 48px 'Inter'"),
       ]);
