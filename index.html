@@ -624,7 +624,7 @@ function App() {
   const [bgPreview, setBgPreview] = useState(null);
   const canvasRefs = useRef({});
   const [elemOffsets, setElemOffsets] = useState(JSON.parse(JSON.stringify(DEFAULT_OFFSETS)));
-  const [showSafeZone, setShowSafeZone] = useState(false);
+  const [showSafeZone, setShowSafeZone] = useState(true);
   const hitBoxesRef = useRef({});
   const dragRef = useRef(null);
 
