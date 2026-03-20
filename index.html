@@ -611,6 +611,7 @@ function App() {
   const [bgPreview, setBgPreview] = useState(null);
   const canvasRefs = useRef({});
   const [elemOffsets, setElemOffsets] = useState(JSON.parse(JSON.stringify(DEFAULT_OFFSETS)));
+  const [showSafeZone, setShowSafeZone] = useState(false);
   const hitBoxesRef = useRef({});
   const dragRef = useRef(null);
 
@@ -651,11 +652,31 @@ function App() {
       else { ctx.fillStyle = inputs.darkColor; ctx.fillRect(0, 0, t.width, t.height); }
       if (t.id === "postHeader") {
         drawPostHeader(ctx, inputs, kitStyle, elemOffsets, hitBoxesRef.current);
+        if (showSafeZone) {
+          const W = 1200, H = 630;
+          ctx.save();
+          ctx.setLineDash([8, 6]);
+          ctx.lineWidth = 2;
+          // 900x600 safe zone
+          const x900 = (W - 900) / 2, y600 = (H - 600) / 2;
+          ctx.strokeStyle = "rgba(255,255,255,0.5)";
+          ctx.strokeRect(x900, y600, 900, 600);
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.font = "bold 12px 'Inter', sans-serif";
+          ctx.fillText("900×600", x900 + 4, y600 + 14);
+          // 600x600 safe zone
+          const x600 = (W - 600) / 2;
+          ctx.strokeStyle = "rgba(255,200,0,0.6)";
+          ctx.strokeRect(x600, y600, 600, 600);
+          ctx.fillStyle = "rgba(255,200,0,0.6)";
+          ctx.fillText("600×600", x600 + 4, y600 + 14);
+          ctx.restore();
+        }
       } else {
         DRAW_FNS[t.id](ctx, inputs, kitStyle);
       }
     }
-  }, [inputs, kitStyle, fontLoaded, elemOffsets]);
+  }, [inputs, kitStyle, fontLoaded, elemOffsets, showSafeZone]);
 
   useEffect(() => { if (tab === "templates") redraw(); }, [redraw, tab]);
 
@@ -941,9 +962,12 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {t.id === "postHeader" && (
-                      <button onClick={resetPositions} style={{ background: "none", color: "#888", border: "1px solid #444", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                        Reset Positions
-                      </button>
+                      <React.Fragment>
+                        <Toggle on={showSafeZone} onToggle={() => setShowSafeZone(prev => !prev)} label="Safe Zones" />
+                        <button onClick={resetPositions} style={{ background: "none", color: "#888", border: "1px solid #444", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          Reset Positions
+                        </button>
+                      </React.Fragment>
                     )}
                     <button onClick={() => download(t.id)} style={{ background: "#222", color: "#ccc", border: "1px solid #333", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                       Download PNG
