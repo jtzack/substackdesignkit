@@ -670,12 +670,17 @@ function App() {
           ctx.save();
           ctx.setLineDash([8, 6]);
           ctx.lineWidth = 2;
+          ctx.font = "bold 12px 'Inter', sans-serif";
+          // 1200x630 full boundary
+          ctx.strokeStyle = "rgba(0,200,255,0.5)";
+          ctx.strokeRect(1, 1, W - 2, H - 2);
+          ctx.fillStyle = "rgba(0,200,255,0.5)";
+          ctx.fillText("1200×630", 4, 14);
           // 900x600 safe zone
           const x900 = (W - 900) / 2, y600 = (H - 600) / 2;
           ctx.strokeStyle = "rgba(255,255,255,0.5)";
           ctx.strokeRect(x900, y600, 900, 600);
           ctx.fillStyle = "rgba(255,255,255,0.5)";
-          ctx.font = "bold 12px 'Inter', sans-serif";
           ctx.fillText("900×600", x900 + 4, y600 + 14);
           // 600x600 safe zone
           const x600 = (W - 600) / 2;
