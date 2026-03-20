@@ -1002,6 +1002,27 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
                 {t.id === "postHeader" && <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>Drag elements to reposition them on the canvas.</div>}
               </div>
             ))}
+
+            {/* ═══ CANVA HEADER ═══ */}
+            <div style={{ background: "linear-gradient(135deg, #7B2FF7 0%, #00C4CC 100%)", borderRadius: 12, padding: 32, marginTop: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 10, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#fff" }}>Want more design flexibility?</h3>
+                  <p style={{ margin: "4px 0 0", fontSize: 14, color: "rgba(255,255,255,0.85)", lineHeight: 1.4 }}>Use the Canva template to fully customize your Substack header with drag-and-drop editing.</p>
+                </div>
+              </div>
+              <a href="https://www.canva.com/design/DAHD6o1gIh8/waFBtoNPep_HHvMdaP0-XQ/view?utm_content=DAHD6o1gIh8&utm_campaign=designshare&utm_medium=link&utm_source=publishsharelink&mode=preview"
+                target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", color: "#7B2FF7", fontWeight: 700, fontSize: 14, padding: "10px 22px", borderRadius: 8, textDecoration: "none", transition: "opacity 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.9"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                Open Canva Template
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#7B2FF7"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              </a>
+            </div>
           </div>
         </div>
       )}
