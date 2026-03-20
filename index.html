@@ -386,80 +386,93 @@ function drawPostHeader(ctx, inputs, style, offsets, hitBoxes) {
     }
 
   } else if (style === "bar") {
+    // Optimized for 900×600 safe zone (centered in 1200×630)
+    const SL = 150, ST = 15, SR = 1050, SB = 615;
+    const PAD = 20, LEFT = SL + PAD, RIGHT = SR - PAD;
     if (hasBg) drawBgCover(ctx, bgImage, W, H, overlayOpacity);
     else { ctx.fillStyle = darkColor; ctx.fillRect(0, 0, W, H); }
-    ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 8); ctx.fillRect(56, H - 80, 300, 4);
+    ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, 8); ctx.fillRect(LEFT, SB - 50, 220, 4);
     if (showPrehead) {
       ctx.save(); ctx.translate(off.prehead.dx, off.prehead.dy);
-      fitSingleLine(ctx, preText, 700, 18, 12, "bold"); ctx.fillStyle = accentColor; ctx.fillText(preText, 56, 90);
+      fitSingleLine(ctx, preText, 580, 18, 12, "bold"); ctx.fillStyle = accentColor; ctx.fillText(preText, LEFT, ST + 60);
       const pW = ctx.measureText(preText).width;
-      hb.prehead = { x: 56 + off.prehead.dx, y: 72 + off.prehead.dy, w: pW, h: 24 };
+      hb.prehead = { x: LEFT + off.prehead.dx, y: ST + 42 + off.prehead.dy, w: pW, h: 24 };
       ctx.restore();
     }
     if (showHeadline) {
       ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
-      const fit = fitText(ctx, headText, 800, 3, 72, 34, "bold");
-      const zT = showPrehead ? 120 : 60, zB = H - 70;
+      const headMaxW = showLogo ? 660 : 780;
+      const fit = fitText(ctx, headText, headMaxW, 3, 64, 30, "bold");
+      const zT = showPrehead ? ST + 90 : ST + 40, zB = SB - 60;
       const bH = fit.lines.length * fit.lineHeight;
       const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
       ctx.fillStyle = "#FFFFFF"; ctx.textBaseline = "middle";
-      fit.lines.forEach((l, i) => ctx.fillText(l, 56, fY + i * fit.lineHeight));
+      fit.lines.forEach((l, i) => ctx.fillText(l, LEFT, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic";
-      hb.headline = { x: 56 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 800, h: bH };
+      hb.headline = { x: LEFT + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: headMaxW, h: bH };
       ctx.restore();
     }
     if (showUrl) {
       ctx.save(); ctx.translate(off.url.dx, off.url.dy);
-      ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", 56, H - 40);
+      ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.fillText(url || "yourstack.substack.com", LEFT, SB - 20);
       const uW = ctx.measureText(url || "yourstack.substack.com").width;
-      hb.url = { x: 56 + off.url.dx, y: H - 56 + off.url.dy, w: uW, h: 24 };
+      hb.url = { x: LEFT + off.url.dx, y: SB - 36 + off.url.dy, w: uW, h: 24 };
       ctx.restore();
     }
     if (showLogo) {
       ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
-      drawLogoOrInitials(ctx, logo, name, W - 140, 40, 90, accentColor, logoOpacity);
-      hb.logo = { x: W - 140 + off.logo.dx, y: 40 + off.logo.dy, w: 90, h: 90 };
+      const logoSize = 80;
+      const logoX = RIGHT - logoSize, logoY = ST + 30;
+      drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, accentColor, logoOpacity);
+      hb.logo = { x: logoX + off.logo.dx, y: logoY + off.logo.dy, w: logoSize, h: logoSize };
       ctx.restore();
     }
 
   } else {
+    // Optimized for 600×600 safe zone (centered in 1200×630)
+    const SL = 300, ST = 15, SR = 900, SB = 615;
+    const PAD = 20, LEFT = SL + PAD, RIGHT = SR - PAD;
+    const CX = W / 2, CONTENT_W = SR - SL - PAD * 2;
     if (hasBg) drawBgCover(ctx, bgImage, W, H, overlayOpacity);
     else { ctx.fillStyle = accentColor; ctx.fillRect(0, 0, W, H); }
     if (showPrehead) {
       ctx.save(); ctx.translate(off.prehead.dx, off.prehead.dy);
-      fitSingleLine(ctx, preText, 700, 20, 12, "bold");
+      fitSingleLine(ctx, preText, CONTENT_W - 40, 18, 11, "bold");
       ctx.fillStyle = darkColor; const pW = ctx.measureText(preText).width;
-      ctx.fillRect((W - pW) / 2 - 20, 140, pW + 40, 36);
+      const pillX = CX - pW / 2 - 18, pillY = ST + 30;
+      ctx.fillRect(pillX, pillY, pW + 36, 32);
       ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(preText, W / 2, 158);
+      ctx.fillText(preText, CX, pillY + 16);
       ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
-      hb.prehead = { x: (W - pW) / 2 - 20 + off.prehead.dx, y: 140 + off.prehead.dy, w: pW + 40, h: 36 };
+      hb.prehead = { x: pillX + off.prehead.dx, y: pillY + off.prehead.dy, w: pW + 36, h: 32 };
       ctx.restore();
     }
     if (showHeadline) {
       ctx.save(); ctx.translate(off.headline.dx, off.headline.dy);
-      const fit = fitText(ctx, headText, 900, 3, 76, 34, "bold");
+      const fit = fitText(ctx, headText, CONTENT_W, 3, 56, 26, "bold");
       ctx.fillStyle = "#FFFFFF";
       const bH = fit.lines.length * fit.lineHeight;
-      const zT = showPrehead ? 190 : 80, zB = H - 70;
+      const zT = showPrehead ? ST + 80 : ST + 30, zB = SB - 60;
       const fY = zT + (zB - zT - bH) / 2 + fit.lineHeight / 2;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      fit.lines.forEach((l, i) => ctx.fillText(l, W / 2, fY + i * fit.lineHeight));
+      fit.lines.forEach((l, i) => ctx.fillText(l, CX, fY + i * fit.lineHeight));
       ctx.textBaseline = "alphabetic"; ctx.textAlign = "start";
-      hb.headline = { x: (W - 900) / 2 + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: 900, h: bH };
+      hb.headline = { x: LEFT + off.headline.dx, y: fY - fit.lineHeight / 2 + off.headline.dy, w: CONTENT_W, h: bH };
       ctx.restore();
     }
     if (showUrl) {
       ctx.save(); ctx.translate(off.url.dx, off.url.dy);
-      ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "400 17px 'Oswald', sans-serif"; ctx.textAlign = "center"; ctx.fillText(url || "yourstack.substack.com", W / 2, H - 36); ctx.textAlign = "start";
+      ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "400 15px 'Oswald', sans-serif"; ctx.textAlign = "center"; ctx.fillText(url || "yourstack.substack.com", CX, SB - 20); ctx.textAlign = "start";
       const uW = ctx.measureText(url || "yourstack.substack.com").width;
-      hb.url = { x: (W - uW) / 2 + off.url.dx, y: H - 52 + off.url.dy, w: uW, h: 24 };
+      hb.url = { x: (W - uW) / 2 + off.url.dx, y: SB - 36 + off.url.dy, w: uW, h: 24 };
       ctx.restore();
     }
     if (showLogo) {
       ctx.save(); ctx.translate(off.logo.dx, off.logo.dy);
-      drawLogoOrInitials(ctx, logo, name, W - 130, H - 110, 70, darkColor, logoOpacity);
-      hb.logo = { x: W - 130 + off.logo.dx, y: H - 110 + off.logo.dy, w: 70, h: 70 };
+      const logoSize = 50;
+      const logoX = RIGHT - logoSize, logoY = SB - logoSize - 10;
+      drawLogoOrInitials(ctx, logo, name, logoX, logoY, logoSize, darkColor, logoOpacity);
+      hb.logo = { x: logoX + off.logo.dx, y: logoY + off.logo.dy, w: logoSize, h: logoSize };
       ctx.restore();
     }
   }
@@ -611,6 +624,7 @@ function App() {
   const [bgPreview, setBgPreview] = useState(null);
   const canvasRefs = useRef({});
   const [elemOffsets, setElemOffsets] = useState(JSON.parse(JSON.stringify(DEFAULT_OFFSETS)));
+  const [showSafeZone, setShowSafeZone] = useState(false);
   const hitBoxesRef = useRef({});
   const dragRef = useRef(null);
 
@@ -651,11 +665,31 @@ function App() {
       else { ctx.fillStyle = inputs.darkColor; ctx.fillRect(0, 0, t.width, t.height); }
       if (t.id === "postHeader") {
         drawPostHeader(ctx, inputs, kitStyle, elemOffsets, hitBoxesRef.current);
+        if (showSafeZone) {
+          const W = 1200, H = 630;
+          ctx.save();
+          ctx.setLineDash([8, 6]);
+          ctx.lineWidth = 2;
+          // 900x600 safe zone
+          const x900 = (W - 900) / 2, y600 = (H - 600) / 2;
+          ctx.strokeStyle = "rgba(255,255,255,0.5)";
+          ctx.strokeRect(x900, y600, 900, 600);
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.font = "bold 12px 'Inter', sans-serif";
+          ctx.fillText("900×600", x900 + 4, y600 + 14);
+          // 600x600 safe zone
+          const x600 = (W - 600) / 2;
+          ctx.strokeStyle = "rgba(255,200,0,0.6)";
+          ctx.strokeRect(x600, y600, 600, 600);
+          ctx.fillStyle = "rgba(255,200,0,0.6)";
+          ctx.fillText("600×600", x600 + 4, y600 + 14);
+          ctx.restore();
+        }
       } else {
         DRAW_FNS[t.id](ctx, inputs, kitStyle);
       }
     }
-  }, [inputs, kitStyle, fontLoaded, elemOffsets]);
+  }, [inputs, kitStyle, fontLoaded, elemOffsets, showSafeZone]);
 
   useEffect(() => { if (tab === "templates") redraw(); }, [redraw, tab]);
 
@@ -941,9 +975,12 @@ ${complexity === "rich" ? `- INTENTIONAL composition: fill the frame with purpos
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {t.id === "postHeader" && (
-                      <button onClick={resetPositions} style={{ background: "none", color: "#888", border: "1px solid #444", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                        Reset Positions
-                      </button>
+                      <React.Fragment>
+                        <Toggle on={showSafeZone} onToggle={() => setShowSafeZone(prev => !prev)} label="Safe Zones" />
+                        <button onClick={resetPositions} style={{ background: "none", color: "#888", border: "1px solid #444", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          Reset Positions
+                        </button>
+                      </React.Fragment>
                     )}
                     <button onClick={() => download(t.id)} style={{ background: "#222", color: "#ccc", border: "1px solid #333", borderRadius: 5, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                       Download PNG
